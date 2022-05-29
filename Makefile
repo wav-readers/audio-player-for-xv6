@@ -133,6 +133,7 @@ UPROGS=\
 	$U/_wc\
 	$U/_zombie\
 	$U/_wav\
+	$U/_aplay\
 
 MUSIC=\
 	$U/wav-music-1410kb.wav # thss:for storage
