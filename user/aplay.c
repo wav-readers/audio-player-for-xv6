@@ -1,28 +1,45 @@
-#include <assert.h>
+// audio player interface
+// 音频播放器入口。控制器，即用户界面。
 
+#include "user/aplaycore.h"
 #include "user/user.h"
-#include "user/wav.h"
 
-//#define DEBUG
+#define NDEBUG
 
-// Parsed command representation
-#define ERROR -1
-#define HELP 0
-#define OPEN 1
-#define VOLUME 2
-#define PAUSE 3
-#define PLAY 4
-#define STOP 5
-#define QUIT 99
+enum Command { ERROR, HELP, OPEN, VOLUME, PAUSE, PLAY, STOP, QUIT };
 
 #define MAXARGS 3
 #define MAX_CM_LEN 100
 #define MAX_CM_NAME_LEN 10  // MAX_COMMAND_NAME_LENGTH
 
+struct AudioPlayInfo *apinfo;
+
+void showHelp() {
+  printf(
+      "open: "
+      "打开音频文件并播放。\n"
+      "      "
+      "若当前已打开音频，程序将先关闭当前音频。\n");
+  printf("  usage: open <file path>\n");
+
+  printf("volume: 设置音量。\n");
+  printf("  usage: volume <target value>\n");
+
+  printf("pause: 暂停播放。\n");
+  printf("  usage: pause\n");
+  printf("play: 继续播放。\n");
+  printf("  usage: play\n");
+  printf("stop: 停止播放。\n");
+  printf("  usage: stop\n");
+
+  printf("quit: 退出播放器。\n");
+  printf("  usage: quit\n");
+}
+
 struct cmd {
-  int type;             // 指令类型
+  enum Command type;    // 指令类型
   char *argv[MAXARGS];  // 参数。第0个参数是指令名
-  int argn;
+  int argc;
 };
 
 /**
@@ -48,8 +65,8 @@ void parsecmd(char *s, struct cmd *cmd) {
   cmd->type = ERROR;
 
   char *c = s;
-  int argn;
-  for (argn = 0;; c++) {
+  int argc;
+  for (argc = 0;; c++) {
     switch (*c) {
       case '\n':
         *c = '\0';
@@ -59,19 +76,19 @@ void parsecmd(char *s, struct cmd *cmd) {
         break;
       default:
         if (c == s || *(c - 1) == '\0') {
-          cmd->argv[argn] = c;
-          argn++;
+          cmd->argv[argc] = c;
+          argc++;
           break;
         }
         break;
     }
   }
 determineType : {
-  cmd->argn = argn;
+  cmd->argc = argc;
 
-#ifdef DEBUG
-  printf("argn: %d\n", cmd->argn);
-  for (int i = 0; i < cmd->argn; i++) {
+#ifndef NDEBUG
+  printf("argc: %d\n", cmd->argc);
+  for (int i = 0; i < cmd->argc; i++) {
     printf("argv[%d]: %s\n", i, cmd->argv[i]);
   }
 #endif
@@ -98,51 +115,43 @@ determineType : {
 }
 
 void runcmd(struct cmd *cmd) {
-  if (cmd->type == ERROR) {
-    fprintf(2, "输入的指令有误！\n");
-    return;
-  }
-
   switch (cmd->type) {
+    case ERROR:
+      fprintf(2, "invalid command\n");
+      return;
     case HELP:
-      printf(
-          "open: "
-          "打开音频文件并播放。"
-          "播放中时也可使用，程序将停止播放当前音频，转而播放新的音频。\n");
-      printf("  open file\n");
-      printf("  file为音频文件地址。\n");
-
-      printf("volume: 设置音量。\n");
-      printf("  volume n\n");
-      printf("  n为目标音量。\n");
-
-      printf("pause: 暂停播放。\n");
-      printf("  pause\n");
-      printf("play: 继续播放。\n");
-      printf("  play\n");
-      printf("stop: 停止播放。可用open指令播放下一个音频。\n");
-      printf("  stop\n");
-
-      printf("quit: 退出播放器。\n");
-      printf("  quit\n");
+      showHelp();
       break;
-    // TODO
     case OPEN:
+      if (cmd->argc != 2) {
+        fprintf(2, "usage: %s <file path>\n", cmd->argv[0]);
+        return;
+      }
+      if (apinfo->hasOpened) closeAudio(apinfo);
+      if (openAudio(cmd->argv[1], apinfo) >= 0) {
+        beginReadDecode(apinfo);
+        setPlay(1, apinfo);
+      }
       break;
     case VOLUME:
+      if (cmd->argc != 2) {
+        fprintf(2, "usage: %s <target value>\n", cmd->argv[0]);
+        return;
+      }
+      setVolume(atoi(cmd->argv[1]), apinfo);
+      printf("current volume: %s\n", cmd->argv[1]);
       break;
     case PAUSE:
+      if (apinfo->hasOpened) setPlay(0, apinfo);
       break;
     case PLAY:
+      if (apinfo->hasOpened) setPlay(1, apinfo);
       break;
     case STOP:
+      if (apinfo->hasOpened) closeAudio(apinfo);
       break;
-
     case QUIT:
       exit(0);
-    default:
-      // assert(0);
-      break;
   }
 }
 
@@ -150,6 +159,7 @@ int main(int argc, char *argv[]) {
   printf("Audio Player 1.0\n");
   printf("Type \"help\" for more information.\n");
 
+  apinfo = AudioPlayInfo();
   char buf[MAX_CM_LEN];
   struct cmd *cmd = (struct cmd *)malloc(sizeof(struct cmd));
   while (getcmd(buf, sizeof(buf)) >= 0) {

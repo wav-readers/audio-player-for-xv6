@@ -7,7 +7,18 @@
 #define GET_DATA_BATCH_SIZE 320
 // 256KB
 
-void getHead(char *fname, struct WaveHeader *wh)
+/// @todo
+int readWavHead(int fd, struct WavInfo *info) {
+
+    return 0;
+}
+
+/// @todo
+void decodeWav(const char *fileData, char *decodedData) {
+  return;
+}
+
+void getHead(char *fname, struct WavInfo *info)
 {
     int fd = open(fname, O_RDONLY);
     char buf[BUF_LENGTH];
@@ -25,21 +36,21 @@ void getHead(char *fname, struct WaveHeader *wh)
         {
             if (buf[pos] == 'R' && buf[pos + 1] == 'I' && buf[pos + 2] == 'F' && buf[pos + 3] == 'F')
             {
-                wh->chunk_id[0] = 'R';
-                wh->chunk_id[1] = 'I';
-                wh->chunk_id[2] = 'F';
-                wh->chunk_id[3] = 'F';
+                info->chunk_id[0] = 'R';
+                info->chunk_id[1] = 'I';
+                info->chunk_id[2] = 'F';
+                info->chunk_id[3] = 'F';
                 pos += 4;
                 break;
             }
             ++pos;
         }
-        wh->chunk_size = *(int *)&buf[pos];
+        info->chunk_size = *(int *)&buf[pos];
         pos += 4;
-        wh->format[0] = buf[pos];
-        wh->format[1] = buf[pos + 1];
-        wh->format[2] = buf[pos + 2];
-        wh->format[3] = buf[pos + 3];
+        info->format[0] = buf[pos];
+        info->format[1] = buf[pos + 1];
+        info->format[2] = buf[pos + 2];
+        info->format[3] = buf[pos + 3];
         pos += 4;
 
         //寻找“fmt”标记
@@ -47,9 +58,9 @@ void getHead(char *fname, struct WaveHeader *wh)
         {
             if (buf[pos] == 'f' && buf[pos + 1] == 'm' && buf[pos + 2] == 't')
             {
-                wh->fmt_chunk_id[0] = 'f';
-                wh->fmt_chunk_id[1] = 'm';
-                wh->fmt_chunk_id[2] = 't';
+                info->fmt_chunk_id[0] = 'f';
+                info->fmt_chunk_id[1] = 'm';
+                info->fmt_chunk_id[2] = 't';
                 pos += 4;
                 break;
             }
@@ -57,19 +68,19 @@ void getHead(char *fname, struct WaveHeader *wh)
         }
 
         //读取Format Chunk部分
-        wh->fmt_chunk_size = *(int *)&buf[pos];
+        info->fmt_chunk_size = *(int *)&buf[pos];
         pos += 4;
-        wh->audio_fomat = *(short *)&buf[pos];
+        info->audio_fomat = *(short *)&buf[pos];
         pos += 2;
-        wh->num_channels = *(short *)&buf[pos];
+        info->num_channels = *(short *)&buf[pos];
         pos += 2;
-        wh->sample_rate = *(int *)&buf[pos];
+        info->sample_rate = *(int *)&buf[pos];
         pos += 4;
-        wh->byte_rate = *(int *)&buf[pos];
+        info->byte_rate = *(int *)&buf[pos];
         pos += 4;
-        wh->block_align = *(short *)&buf[pos];
+        info->block_align = *(short *)&buf[pos];
         pos += 2;
-        wh->bits_per_sample = *(short *)&buf[pos];
+        info->bits_per_sample = *(short *)&buf[pos];
         pos += 2;
 
         //寻找“data”标记
@@ -77,10 +88,10 @@ void getHead(char *fname, struct WaveHeader *wh)
         {
             if (buf[pos] == 'd' && buf[pos + 1] == 'a' && buf[pos + 2] == 't' && buf[pos + 3] == 'a')
             {
-                wh->data_chunk_id[0] = 'd';
-                wh->data_chunk_id[1] = 'a';
-                wh->data_chunk_id[2] = 't';
-                wh->data_chunk_id[3] = 'a';
+                info->data_chunk_id[0] = 'd';
+                info->data_chunk_id[1] = 'a';
+                info->data_chunk_id[2] = 't';
+                info->data_chunk_id[3] = 'a';
                 pos += 4;
                 break;
             }
@@ -88,15 +99,15 @@ void getHead(char *fname, struct WaveHeader *wh)
         }
 
         //读取Data Chunk的非data部分
-        wh->data_chunk_size = *(int *)&buf[pos];
+        info->data_chunk_size = *(int *)&buf[pos];
         fprintf(2, "buf[pos] %c bytes\n", buf[pos]);
         pos += 4;
 
         //记录真正音频数据的开始位置
-        wh->start_pos = pos;
+        info->start_pos = pos;
 
         //计算文件总帧数
-        wh->num_frame = wh->data_chunk_size / (wh->num_channels * (wh->bits_per_sample / 8));
+        info->num_frame = info->data_chunk_size / (info->num_channels * (info->bits_per_sample / 8));
     }
     else
     {
@@ -124,10 +135,10 @@ int print_binary(int dec){
 }
 
 
-void getData(char *fname, struct WaveHeader *wh)
+void getData(char *fname, struct WavInfo *info)
 {
     //记录文件读取位置
-    int pos = wh->start_pos;
+    int pos = info->start_pos;
 
     //为加快处理速度，根据ChunkSize将文件一次读入内存
     int fd = open(fname, O_RDONLY);
@@ -137,7 +148,7 @@ void getData(char *fname, struct WaveHeader *wh)
         exit(1);
     }
 
-    fprintf(2, "wh->chunk_size %d\n",wh->chunk_size);
+    fprintf(2, "info->chunk_size %d\n",info->chunk_size);
 
     short getdata_batch = GET_DATA_BATCH_SIZE;
 
@@ -153,32 +164,32 @@ void getData(char *fname, struct WaveHeader *wh)
         exit(1);
     }
 
-    fprintf(2, "getData: pos at %d,start pos at %d\n", pos,wh->start_pos);
-    fprintf(2, "getData: read %d bytes, data chunk size %d\n", size,wh->data_chunk_size);
-    printf("getData:bits_per_sample %d\n",wh->bits_per_sample);
+    fprintf(2, "getData: pos at %d,start pos at %d\n", pos,info->start_pos);
+    fprintf(2, "getData: read %d bytes, data chunk size %d\n", size,info->data_chunk_size);
+    printf("getData:bits_per_sample %d\n",info->bits_per_sample);
     
     //TODO 这里要改，这一轮有多少要读。最后一轮不需要读这么多
     short read_size = getdata_batch;
     //以每帧2字节为例
 
-    if (wh->num_channels == 1){
-        while (pos < (wh->start_pos + read_size))
+    if (info->num_channels == 1){
+        while (pos < (info->start_pos + read_size))
         {   
             printf("\nboth channels:");
             ushort i = 0;           
-            while(i < wh->bits_per_sample){
+            while(i < info->bits_per_sample){
                 printf("%d ",*(short *)&file_data[pos]);
                 pos++;
                 i++;
             }
         }
     }
-    else if (wh->num_channels == 2){
-        while (pos < wh->start_pos + read_size)
+    else if (info->num_channels == 2){
+        while (pos < info->start_pos + read_size)
         {
             printf("\nleft channel:");           
             ushort i = 0;           
-            while(i < wh->bits_per_sample){
+            while(i < info->bits_per_sample){
                 printf("%d ",*(short *)&file_data[pos]);
                 pos++;
                 i++;
@@ -186,7 +197,7 @@ void getData(char *fname, struct WaveHeader *wh)
             
             printf("\nright channel:");   
             i = 0;           
-            while(i < wh->bits_per_sample){
+            while(i < info->bits_per_sample){
                 printf("%d ",*(short *)&file_data[pos]);
                 pos++;
                 i++;
@@ -198,25 +209,4 @@ void getData(char *fname, struct WaveHeader *wh)
     }
 
     printf("\n ");
-}
-
-int main(int argc, char *argv[])
-{
-    if (argc <= 1)
-    {
-        exit(0);
-    }
-
-    else if (argc > 2)
-    {
-        fprintf(2, "Usage: %s [filename]\n", argv[0]);
-        exit(1);
-    }
-
-    struct WaveHeader wh;
-    getHead(argv[1], &wh);
-    getData(argv[1], &wh);
-    fprintf(2, "chunk_id: %c%c%c%c\n", wh.chunk_id[0], wh.chunk_id[1], wh.chunk_id[2], wh.chunk_id[3]);
-
-    exit(0);
 }

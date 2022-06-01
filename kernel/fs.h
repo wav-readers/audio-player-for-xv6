@@ -51,7 +51,8 @@ struct dinode {
 #define BBLOCK(b, sb) ((b)/BPB + sb.bmapstart)
 
 // Directory is a file containing a sequence of dirent structures.
-#define DIRSIZ 14
+// 要求：(BSIZE % sizeof(struct dirent)) == 0
+#define DIRSIZ 30
 
 struct dirent {
   ushort inum;

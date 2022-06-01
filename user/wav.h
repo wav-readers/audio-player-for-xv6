@@ -1,10 +1,11 @@
-
+#ifndef USER_WAV_H
+#define USER_WAV_H
 
 #include "kernel/types.h"
 #include "user/user.h"
 #include "kernel/fcntl.h"
 
-struct WaveHeader
+struct WavInfo
 {
     char chunk_id[4];
     uint chunk_size;
@@ -23,7 +24,21 @@ struct WaveHeader
     int start_pos;
 };
 
+/**
+ * @pre fd的偏移量为0
+ * @brief 读取wav文件的文件头，将相关信息存储到info.
+ * 若检测到编码错误，则立即返回-1
+ * @return 0 if 正确执行，-1 if 该wav文件有问题
+ */
+int readWavHead(int fd, struct WavInfo *info);
+// 从fileData中读取数据，解码后写入decodeData
+// question: 每次读取多少数据来解码？每次解码会产生多少解码后的数据？此数据用于指导缓冲区大小
+// question: 【是否可能直接将解码后的数据写入声卡缓冲区，从而取消“解码后数据”的缓冲区？】
+void decodeWav(const char *fileData, char *decodedData);
 
-void getHead(char *fname, struct WaveHeader *wh);
-void getData(char *fname, struct WaveHeader *wh); 
+
+void getHead(char *fname, struct WavInfo *info);
+void getData(char *fname, struct WavInfo *info); 
 int print_binary(int dec);
+
+#endif

@@ -52,6 +52,16 @@ strchr(const char *s, char c)
   return 0;
 }
 
+char *
+strrchr(const char *s, char c)
+{
+    char *ret = 0;
+    for (; *s; s++)
+        if(*s == c)
+            ret = (char*)s;
+    return ret;
+}
+
 char*
 gets(char *buf, int max)
 {
