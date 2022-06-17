@@ -67,23 +67,19 @@ void parsecmd(char *s, struct cmd *cmd) {
   char *c = s;
   int argc;
   for (argc = 0;; c++) {
-    switch (*c) {
-      case '\n':
-        *c = '\0';
-        goto determineType;
-      case ' ':
-        *c = '\0';
-        break;
-      default:
-        if (c == s || *(c - 1) == '\0') {
-          cmd->argv[argc] = c;
-          argc++;
-          break;
-        }
-        break;
+    if (*c == '\n') {
+      *c = '\0';
+      break;
+    }
+    if (*c == ' ') {
+      *c = '\0';
+      continue;
+    }
+    if (c == s || *(c - 1) == '\0') {
+      cmd->argv[argc] = c;
+      argc++;
     }
   }
-determineType : {
   cmd->argc = argc;
 
 #ifndef NDEBUG
@@ -111,7 +107,6 @@ determineType : {
   } else {
     cmd->type = ERROR;
   }
-}
 }
 
 void runcmd(struct cmd *cmd) {
