@@ -38,6 +38,9 @@ struct AudioPlayInfo *AudioPlayInfo();
  */
 int openAudio(const char *file, struct AudioPlayInfo *apinfo);
 
+/// @pre apinfo->hasOpened == 1
+void showAudioInfo(struct AudioPlayInfo *apinfo);
+
 /// @return 新建进程的pid if 成功 else -1
 int beginReadDecode(struct AudioPlayInfo *apinfo);
 

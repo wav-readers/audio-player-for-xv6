@@ -60,14 +60,12 @@ int openAudio(const char *file, struct AudioPlayInfo *apinfo) {
 
   switch (apinfo->ftype) {
     case WAV: {
-      struct WavInfo info;
-      if (readWavHead(fd, &info) < 0) {
+      if (readWavHead(fd, &apinfo->wavInfo) < 0) {
         fprintf(2, "invalid file format");
         close(fd);
         return -1;
       }
-      apinfo->wavInfo = info;
-      setSampleRate(info.sample_rate);
+      setSampleRate(apinfo->wavInfo.sample_rate);
       break;
     }
     case MP3:
@@ -76,13 +74,26 @@ int openAudio(const char *file, struct AudioPlayInfo *apinfo) {
   }
 
   apinfo->hasOpened = 1;
-  // 填写其他信息
-  apinfo->fd = fd;
+  // 填写其他信息：音频文件、播放状态、后台信息
   apinfo->fname = file;
   apinfo->isPlaying = 0;
-  apinfo->readDecPid = -1;
   apinfo->volume = getVolume();
+  apinfo->fd = fd;
+  apinfo->readDecPid = -1;
   return fd;
+}
+
+void showAudioInfo(struct AudioPlayInfo *apinfo) {
+  printf("file name: %s\n", apinfo->fname);
+  switch (apinfo->ftype) {
+    case WAV:
+      printf("sample rate: %d\n", apinfo->wavInfo.sample_rate);
+      break;
+    case MP3:
+      ///@todo
+      break;
+  }
+  printf("volume: %d\n", apinfo->volume);
 }
 
 int beginReadDecode(struct AudioPlayInfo *apinfo) {
