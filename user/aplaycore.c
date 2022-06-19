@@ -8,6 +8,7 @@ struct AudioPlayInfo *AudioPlayInfo() {
   struct AudioPlayInfo *apinfo =
       (struct AudioPlayInfo *)malloc(sizeof(struct AudioPlayInfo));
   apinfo->hasOpened = 0;
+  apinfo->volume = getVolume();
   return apinfo;
 }
 
