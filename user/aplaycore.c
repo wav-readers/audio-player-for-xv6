@@ -12,34 +12,29 @@ struct AudioPlayInfo *AudioPlayInfo() {
   return apinfo;
 }
 
-///@todo 以下
-// 和声卡交互的可考虑再单独移到新的文件去。soundcard.h, soundcard.c
+///@todo
+// 做成系统调用，无需在此库中提供对外接口
+int clearSoundCardBuffer();
+int getVolume() {
+  // 做成系统调用，无需在此库中提供对外接口
+  // 应用程序可从apinfo中读取volume信息
+  return 0;
+}
+// 做成系统调用，无需在此库中提供对外接口
+int setSampleRate(uint sample_rate) { return 0; }
+/// 以上
 
+///@todo 以下在系统调用的基础上套层壳，使成为库函数而非系统调用
 int setPlay(int play, struct AudioPlayInfo *apinfo) {
-  // 也许得做成系统调用
+  // 调用系统调用
   return 0;
 }
 
 int setVolume(int volume, struct AudioPlayInfo *apinfo) {
-  // 也许得做成系统调用
+  // 调用系统调用
   return volume;
 }
-
-///@todo
-int getVolume() {
-  // 也许得做成系统调用
-  return 0;
-}
-
-///@todo
-// 也许得做成系统调用
-int setSampleRate(uint sample_rate) { return 0; }
-
-///@todo
-// 也许得做成系统调用
-int clearSoundCardBuffer() { return 0; }
-
-///@todo 以上
+/// 以上
 
 int openAudio(const char *file, struct AudioPlayInfo *apinfo) {
   char *filext = strrchr(file, '.');
@@ -119,10 +114,7 @@ int beginReadDecode(struct AudioPlayInfo *apinfo) {
   }
   ///@todo
   // 创建缓冲区
-  // question: 解码前的数据的缓冲区大小?
-  // question: 解码后的数据的缓冲区大小？
-  // question:
-  // 【是否可能直接将解码后的数据写入声卡缓冲区，从而取消“解码后数据”的缓冲区？】
+  // question: 缓冲区大小?
   while (1) {
     // 将文件读入「解码前数据」缓冲区。已被读尽则exit(0)
     exit(0);
@@ -130,7 +122,8 @@ int beginReadDecode(struct AudioPlayInfo *apinfo) {
     // 调用decode函数解码
     printf("只是为了混过编译%s", decode);
 
-    // 将解码后的数据写入声卡缓冲区，缓冲区满则阻塞（记得上锁）
+    // 调用系统调用，将解码后的数据写入声卡缓冲区
+    // 若可能卡顿，可考虑优化缓存机制？
   }
 }
 
