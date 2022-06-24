@@ -4,6 +4,12 @@
 #include "user/user.h"
 #include "user/wav.h"
 
+int getVolume() {
+  // 做成系统调用，无需在此库中提供对外接口
+  // 应用程序可从apinfo中读取volume信息
+  return 0;
+}
+
 struct AudioPlayInfo *AudioPlayInfo() {
   struct AudioPlayInfo *apinfo =
       (struct AudioPlayInfo *)malloc(sizeof(struct AudioPlayInfo));
@@ -14,12 +20,7 @@ struct AudioPlayInfo *AudioPlayInfo() {
 
 ///@todo
 // 做成系统调用，无需在此库中提供对外接口
-int clearSoundCardBuffer();
-int getVolume() {
-  // 做成系统调用，无需在此库中提供对外接口
-  // 应用程序可从apinfo中读取volume信息
-  return 0;
-}
+int clearSoundCardBuffer() { return 0; }
 // 做成系统调用，无需在此库中提供对外接口
 int setSampleRate(uint sample_rate) { return 0; }
 /// 以上

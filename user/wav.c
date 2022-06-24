@@ -100,6 +100,7 @@ int readWavHead(int fd, struct WavInfo *info) {
     {
         return -1;
     }
+    return 0;
 }
 
 /// @todo
