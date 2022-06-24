@@ -126,6 +126,7 @@ void runcmd(struct cmd *cmd) {
         apShowAudioInfo(apinfo);
         apReadDecode(apinfo);
         apSetPlay(1, apinfo);
+        printf("finish decoding\n");
       }
       break;
     case VOLUME:

@@ -122,7 +122,7 @@ int apReadDecode(struct ApAudioPlayInfo *apinfo) {
       int nDec = decode(fileData, decodedData);
       writeDecodedAudio(decodedData, nDec);
     } */
-    
+  return 0;
 }
 
 int apCloseAudio(struct ApAudioPlayInfo *apinfo) {
