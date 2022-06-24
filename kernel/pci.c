@@ -5,33 +5,15 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
-
-#define DMA_BUFFER_NUM 32
-#define DMA_SAMPLE_NUM 4096
-#define DMA_BUFFER_SIZE (DMA_SAMPLE_NUM * 2)
-
-#define PCI_CONFIG_SPACE_CMD 0x04
-#define PCI_CONFIG_SPACE_INTLN 0x3C
-#define PCI_CONFIG_NAMBA 0x10
-#define PCI_CONFIG_NABMBA 0x14
+#include "pci.h"
 
 uint32 namba; // 0x1000
 uint32 nabmba; // 0x1400
 
-struct descriptor {
-  uint32 buffer_pointer;
-  uint32 buffer_ctrl_and_len; // 31:IOC, 30:BUP, 29-16:Reserved, 15-0:Length
-};
-
-struct descriptor_node {
-  struct descriptor_node *next;
-  struct descriptor desc;
-};
-
 uint8 data[DMA_BUFFER_NUM * DMA_BUFFER_SIZE];
 
 static struct descriptor descriptor_list[DMA_BUFFER_NUM];
-
+static struct sound_node* sound_queue_head;
 static struct spinlock sound_lock;
 
 volatile uint8* Pointer8(uint64 addr) { return (volatile uint8*)(addr); }
@@ -65,57 +47,117 @@ read_pci_config(uint16 bus, uint16 slot, uint16 func, uint16 offset)
 }
 
 void
+set_sample_rate(uint32 rate)
+{
+  Write8(PCIE_PIO | (nabmba + 0x1b), 0); // clear control register
+  Write16(PCIE_PIO | (namba + 0x2c), rate & 0xffff);
+  Write16(PCIE_PIO | (namba + 0x2e), rate & 0xffff);
+  Write16(PCIE_PIO | (namba + 0x30), rate & 0xffff);
+}
+
+void
+set_volume(uint16 volume)
+{
+  Write16(PCIE_PIO | (namba + 0x02), 0x0);
+  Write16(PCIE_PIO | (namba + 0x18), volume);
+}
+
+uint16
+get_volume()
+{
+  return Read16(PCIE_PIO | (namba + 0x18));
+}
+
+void
+clear_sound_queue()
+{
+  Write8(PCIE_PIO | (nabmba + 0x1b), 0); // clear control register
+  sound_queue_head = 0;
+}
+
+int
+resume()
+{
+  int cur_status = Read8(PCIE_PIO | (nabmba + 0x1b)); // read control register
+  if (cur_status == 0) {
+    Write8(PCIE_PIO | (nabmba + 0x1b), 5); // resume
+    return 0;
+  }
+  return -1;
+}
+
+int
+pause()
+{
+  int cur_status = Read8(PCIE_PIO | (nabmba + 0x1b)); // read control register
+  if (cur_status == 5) {
+    Write8(PCIE_PIO | (nabmba + 0x1b), 0); // pause
+    return 0;
+  }
+  return -1;
+}
+
+void
 test_play()
 {
-    printf("in test play\n");
-    // check volume
-    Write16(PCIE_PIO | (namba + 0x02), 0x0);
-    Write16(PCIE_PIO | (namba + 0x18), 0x808);
-    printf("Master Volume Mute: %6\n", Read16(PCIE_PIO | (namba + 0x02)));
-    printf("PCM Out Volume Mute: %6\n", Read16(PCIE_PIO | (namba + 0x18)));
+  printf("in test play\n");
 
-    // set sample rate
-    Write16(PCIE_PIO | (namba + 0x2c), 44100);
-    Write16(PCIE_PIO | (namba + 0x2e), 44100);
-    Write16(PCIE_PIO | (namba + 0x30), 44100);
+  // create test data
+  acquire(&sound_lock);
+  int len = DMA_BUFFER_NUM * DMA_BUFFER_SIZE;
+  for (int i = 0; i < len; i++) data[i] = i % 256;
+  release(&sound_lock);
 
-    int len = sizeof(data);
+  // check POCIV
+  uint32 cycle = 1;
+  uint8 last_POCIV = Read8(PCIE_PIO | (nabmba + 0x14)), new_POCIV;
 
-    // create test data
-    acquire(&sound_lock);
-    for (int i = 0; i < len; i++) data[i] = i % 256;
+  play();
 
-    // write buffer info
-    uint32 base_addr = (uint64)data;
-    for (int i = 0; i < DMA_BUFFER_NUM; i++) {
-      descriptor_list[i].buffer_pointer = base_addr + i * DMA_BUFFER_SIZE;
-      descriptor_list[i].buffer_ctrl_and_len = 0x80000000 | DMA_SAMPLE_NUM;
-    }
-    release(&sound_lock);
-
-    // read POCIV
-    printf("POCIV: %8\n", Read8(PCIE_PIO | (nabmba + 0x14)));
-    
-    // write the Last Valid Index
-    Write8(PCIE_PIO | (nabmba + 0x15), 0x1F);
-
-    // write the run bit
-    Write8(PCIE_PIO | (nabmba + 0x1B), 0x5);
-
-    // check POCIV
-    uint32 cycle = 1;
-    uint8 last_POCIV = 0, new_POCIV;
-    while (1) {
-      cycle--;
-      if (cycle == 0) {
-        new_POCIV = Read8(PCIE_PIO | (nabmba + 0x14));
-        if (new_POCIV != last_POCIV) {
-          printf("POCIV: %8\n", new_POCIV);
-        }
-        last_POCIV = new_POCIV;
-        cycle = 1;
+  while (1) {
+    cycle--;
+    if (cycle == 0) {
+      new_POCIV = Read8(PCIE_PIO | (nabmba + 0x14));
+      if (new_POCIV != last_POCIV) {
+        printf("POCIV: %8\n", new_POCIV);
       }
+      last_POCIV = new_POCIV;
+      cycle = 1;
+      if (last_POCIV == 0x1f) break;
     }
+  }
+}
+
+void
+play()
+{
+  // write buffer descriptor info
+  uint32 base_addr = (uint64)data;
+  for (int i = 0; i < DMA_BUFFER_NUM; i++) {
+    descriptor_list[i].buffer_pointer = base_addr + i * DMA_BUFFER_SIZE;
+    descriptor_list[i].buffer_ctrl_and_len = 0x80000000 | DMA_SAMPLE_NUM;
+  }
+  // initialize the DMA engine
+  // uint32 base = (uint64)descriptor_list;
+  // Write32(PCIE_PIO | (nabmba + 0x10), base);
+
+  // write the Last Valid Index
+  Write8(PCIE_PIO | (nabmba + 0x15), 0x1F);
+
+  // write the run bit
+  Write8(PCIE_PIO | (nabmba + 0x1B), 0x5);
+}
+
+void
+add_sound_node(struct sound_node *node)
+{
+  acquire(&sound_lock);
+  node->next = 0;
+  struct sound_node *tail = sound_queue_head;
+  while (tail && tail->next) tail = tail->next;
+  if (tail) tail->next = node;
+  else { sound_queue_head = node; play(); }
+  release(&sound_lock);
 }
 
 void
@@ -213,6 +255,9 @@ sound_card_init(uint16 bus, uint16 slot, uint16 func, uint16 offset)
   uint32 base = (uint64)descriptor_list;
   Write32(PCIE_PIO | (nabmba + 0x10), base);
 
-  printf("before test play\n");
+  // initialize sample rate and volume
+  set_sample_rate(44100);
+  set_volume(0x808);
+  
   test_play();
 }
