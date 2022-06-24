@@ -142,7 +142,7 @@ UPROGS=\
 	$U/_aplay\
 
 MUSIC=\
-	$U/wav-music-1410kb.wav # thss:for storage
+	$U/xv6_test.wav # thss:for storage
 
 # fs.img: mkfs/mkfs README $(UPROGS)
 # 	mkfs/mkfs fs.img README $(UPROGS)
