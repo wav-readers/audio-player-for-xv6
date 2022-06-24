@@ -10,7 +10,6 @@ enum Command { ERROR, HELP, OPEN, VOLUME, PAUSE, PLAY, STOP, QUIT };
 
 #define MAXARGS 3
 #define MAX_CM_LEN 100
-#define MAX_CM_NAME_LEN 10  // MAX_COMMAND_NAME_LENGTH
 
 struct AudioPlayInfo *apinfo;
 
@@ -58,7 +57,7 @@ int getcmd(char *buf, int nbuf) {
 
 /**
  * @brief 翻译指令字符串s为cmd结构体
- * @param s 形如"open [file]"的完整指令。以\n结尾
+ * @param s 形如"open <file>"的完整指令。以\n结尾
  */
 void parsecmd(char *s, struct cmd *cmd) {
   memset(cmd, 0, sizeof(*cmd));
@@ -67,23 +66,19 @@ void parsecmd(char *s, struct cmd *cmd) {
   char *c = s;
   int argc;
   for (argc = 0;; c++) {
-    switch (*c) {
-      case '\n':
-        *c = '\0';
-        goto determineType;
-      case ' ':
-        *c = '\0';
-        break;
-      default:
-        if (c == s || *(c - 1) == '\0') {
-          cmd->argv[argc] = c;
-          argc++;
-          break;
-        }
-        break;
+    if (*c == '\n') {
+      *c = '\0';
+      break;
+    }
+    if (*c == ' ') {
+      *c = '\0';
+      continue;
+    }
+    if (c == s || *(c - 1) == '\0') {
+      cmd->argv[argc] = c;
+      argc++;
     }
   }
-determineType : {
   cmd->argc = argc;
 
 #ifndef NDEBUG
@@ -112,7 +107,6 @@ determineType : {
     cmd->type = ERROR;
   }
 }
-}
 
 void runcmd(struct cmd *cmd) {
   switch (cmd->type) {
@@ -129,6 +123,7 @@ void runcmd(struct cmd *cmd) {
       }
       if (apinfo->hasOpened) closeAudio(apinfo);
       if (openAudio(cmd->argv[1], apinfo) >= 0) {
+        showAudioInfo(apinfo);
         beginReadDecode(apinfo);
         setPlay(1, apinfo);
       }

@@ -14,8 +14,9 @@ enum FileType { WAV, MP3 };
 struct AudioPlayInfo {
   // 始终可用
   int hasOpened;
+  int volume;  // 全局音量
 
-  // hasOpened == 1
+  // 以下只在 hasOpened == 1 时可用
   // 音频文件信息
   const char *fname;
   enum FileType ftype;
@@ -24,7 +25,6 @@ struct AudioPlayInfo {
   };
   // 播放状态
   int isPlaying;
-  int volume;
   // 后台信息
   int fd;
   int readDecPid;
@@ -38,6 +38,9 @@ struct AudioPlayInfo *AudioPlayInfo();
  */
 int openAudio(const char *file, struct AudioPlayInfo *apinfo);
 
+/// @pre apinfo->hasOpened == 1
+void showAudioInfo(struct AudioPlayInfo *apinfo);
+
 /// @return 新建进程的pid if 成功 else -1
 int beginReadDecode(struct AudioPlayInfo *apinfo);
 
@@ -49,6 +52,7 @@ int beginReadDecode(struct AudioPlayInfo *apinfo);
 int closeAudio(struct AudioPlayInfo *apinfo);
 
 /**
+ * @pre apinfo->hasOpened == 1
  * @brief 设置播放状态
  * @param play 0为暂停，1为播放
  * @return 0 if 成功 else -1
