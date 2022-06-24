@@ -8,13 +8,13 @@
 #include "proc.h"
 #include "pci.h"
 
-#define BUFFER_NODE_NUM 4
+#define BUFFER_NODE_NUM 3
 #define MAX_VOLUME 0b00000
 #define MIN_VOLUME 0b11111
 #define MUTE_VOLUME 0x8000
 
 static struct sound_node sound_buffer[BUFFER_NODE_NUM];
-int buffer_index, used_size;
+int buffer_index = 0, used_size = 0;
 
 // void setSampleRate(uint sample_rate);
 uint64 sys_setSampleRate()
@@ -22,10 +22,10 @@ uint64 sys_setSampleRate()
   int rate; argint(0, &rate);
   if (rate < 0) return -1;
   // clear buffer
-  buffer_index = 0; used_size = 0;
+  //buffer_index = 0; used_size = 0;
   for (int i = 0; i < BUFFER_NODE_NUM; i++) {
-    memset(&sound_buffer[i], 0, sizeof(struct sound_node));
-    sound_buffer[i].flag = 0;
+    //memset(&sound_buffer[i], 0, sizeof(struct sound_node));
+    //sound_buffer[i].flag = 0;
   }
   set_sample_rate(rate);
   return 0;
@@ -75,8 +75,8 @@ uint64 sys_writeDecodedAudio(void)
   printf("in sys write decode\n");
   int bufsize = DMA_BUFFER_NUM * DMA_BUFFER_SIZE, size;
 
-  char buf[4097];
-  if (argint(1, &size) < 0 || size > 4096) return -1;
+  char buf[2049];
+  if (argint(1, &size) < 0 || size > 2048) return -1;
 
   uint64 buf_addr;
   if (argaddr(0, &buf_addr) < 0)
@@ -85,17 +85,37 @@ uint64 sys_writeDecodedAudio(void)
   struct proc *p = myproc();
   if (copyin(p->pagetable, buf, buf_addr, size) < 0)
     return -1;
+
+  // check data
+  printf("checking data in sys write\n");
+  /*for (int j = 0; j < 16; j++) {
+    int start = j * 64;
+    for (int i = 0; i < 16; ++i) {
+      printf("%d: %8\n", start+i, buf[start+i]);
+    }
+  }*/
+  
   
   if (used_size == 0) {
+    printf("this is a new buffer\n");
     // this is a new buffer
     memset(&sound_buffer[buffer_index], 0, sizeof(struct sound_node));
   }
   if (bufsize - used_size > size) {
+    printf("data can all fit into buffer\n");
     // data can all put into current buffer.
     memmove(&sound_buffer[buffer_index].data[used_size], buf, size);
+    printf("checking data after memmov\n");
+    /*for (int j = 0; j < 16; j++) {
+      int start = j * 64;
+      for (int i = 0; i < 16; ++i) {
+        printf("%d: %8\n", start+i, sound_buffer[buffer_index].data[start+i]);
+      }
+    }*/
     sound_buffer[buffer_index].flag = 1;
     used_size += size;
   } else {
+    printf("data cannot be put into buffer");
     // data cannot all put into current buffer.
     int remain = bufsize - used_size;
     // then send this buffer to the audio card.
@@ -125,6 +145,19 @@ uint64 sys_writeDecodedAudio(void)
       if (flag) break;
     }
   }
+  return 0;
+}
+
+uint64 sys_finishWriteAudio(void) {
+  printf("checking data in finish write\n");
+  /*for (int j = 0; j < 16; j++) {
+    int start = j * 64;
+    for (int i = 0; i < 16; ++i) {
+      printf("%d: %8\n", start+i, sound_buffer[buffer_index].data[start+i]);
+    }
+  }*/
+  // send the buffer to audio card
+  if (used_size > 0) add_sound_node(&sound_buffer[buffer_index]);
   return 0;
 }
 

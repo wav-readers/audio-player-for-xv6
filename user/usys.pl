@@ -42,3 +42,4 @@ entry("setVolume");
 entry("setPlay");
 entry("writeDecodedAudio");
 entry("clearSoundCardBuffer");
+entry("finishwriteaudio");

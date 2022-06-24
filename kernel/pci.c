@@ -112,7 +112,21 @@ test_play()
   uint32 cycle = 1;
   uint8 last_POCIV = Read8(PCIE_PIO | (nabmba + 0x14)), new_POCIV;
 
-  play();
+  // write buffer descriptor info
+  uint32 base_addr = (uint64)data;
+  for (int i = 0; i < DMA_BUFFER_NUM; i++) {
+    descriptor_list[i].buffer_pointer = base_addr + i * DMA_BUFFER_SIZE;
+    descriptor_list[i].buffer_ctrl_and_len = 0x80000000 | DMA_SAMPLE_NUM;
+  }
+  // initialize the DMA engine
+  // uint32 base = (uint64)descriptor_list;
+  // Write32(PCIE_PIO | (nabmba + 0x10), base);
+
+  // write the Last Valid Index
+  Write8(PCIE_PIO | (nabmba + 0x15), 0x1F);
+
+  // write the run bit
+  Write8(PCIE_PIO | (nabmba + 0x1B), 0x5);
 
   while (1) {
     cycle--;
@@ -132,11 +146,19 @@ void
 play()
 {
   // write buffer descriptor info
-  uint32 base_addr = (uint64)data;
+  uint32 base_addr = (uint64)(sound_queue_head -> data);
+  // print test data
+  /*for (int j = 0; j < 16; j++) {
+    int start = j * 64;
+    for (int i = 0; i < 16; ++i) {
+      printf("%d: %8\n", start+i, sound_queue_head->data[start+i]);
+    }
+  }*/
   for (int i = 0; i < DMA_BUFFER_NUM; i++) {
     descriptor_list[i].buffer_pointer = base_addr + i * DMA_BUFFER_SIZE;
     descriptor_list[i].buffer_ctrl_and_len = 0x80000000 | DMA_SAMPLE_NUM;
   }
+  Write32(PCIE_PIO | (nabmba + 0x10), (uint64)descriptor_list);
   // initialize the DMA engine
   // uint32 base = (uint64)descriptor_list;
   // Write32(PCIE_PIO | (nabmba + 0x10), base);
@@ -148,15 +170,41 @@ play()
   Write8(PCIE_PIO | (nabmba + 0x1B), 0x5);
 }
 
+// process interrupt: soundQueue go front 1.
+void soundintr(void) {
+  acquire(&sound_lock);
+  if (sound_queue_head == 0) {
+    panic("empty sound queue");
+    return;
+  }
+  Write16(PCIE_PIO | (nabmba + 0x16), 0x1c);
+  struct sound_node *node = sound_queue_head;
+  sound_queue_head = node -> next;
+  node -> flag = 0;
+  if (sound_queue_head == 0) {
+    release(&sound_lock); return;
+  }
+  uint32 data_addr = (uint64)(sound_queue_head -> data);
+  for (int i = 0; i < DMA_BUFFER_NUM; ++i) {
+    descriptor_list[i].buffer_pointer =
+      data_addr + i * DMA_BUFFER_SIZE;
+    descriptor_list[i].buffer_ctrl_and_len =
+      0x80000000 | DMA_SAMPLE_NUM;
+  }
+  Write8(PCIE_PIO | (nabmba + 0x1b), 5);
+  release(&sound_lock);
+}
+
 void
 add_sound_node(struct sound_node *node)
 {
+  printf("adding sounding node\n");
   acquire(&sound_lock);
   node->next = 0;
-  struct sound_node *tail = sound_queue_head;
-  while (tail && tail->next) tail = tail->next;
-  if (tail) tail->next = node;
-  else { sound_queue_head = node; play(); }
+  struct sound_node **tail;
+  for (tail = &sound_queue_head; *tail; tail = &(*tail)->next) ;
+  *tail = node;
+  if (sound_queue_head == node) play();
   release(&sound_lock);
 }
 
@@ -259,5 +307,5 @@ sound_card_init(uint16 bus, uint16 slot, uint16 func, uint16 offset)
   set_sample_rate(44100);
   set_volume(0x808);
   
-  test_play();
+  //test_play();
 }
