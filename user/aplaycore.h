@@ -20,7 +20,7 @@ void decodeMp3(const char *fileData, char *decodedData);
 
 #include "user/wav.h"
 
-#define READ_BUFFER_SIZE 4096
+#define READ_BUFFER_SIZE 2048
 
 enum ApFileType { WAV, MP3 };
 
