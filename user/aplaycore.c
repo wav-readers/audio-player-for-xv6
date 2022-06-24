@@ -91,7 +91,8 @@ void apShowAudioInfo(struct ApAudioPlayInfo *apinfo) {
 
 int apReadDecode(struct ApAudioPlayInfo *apinfo) {
   printf("in ap read decode\n");
-  int pid = fork();
+  
+  int pid = fork(); printf("pid: %d\n", pid);
   if (pid < 0) {
     fprintf(2, "fail to fork");
     return -1;
@@ -103,9 +104,11 @@ int apReadDecode(struct ApAudioPlayInfo *apinfo) {
   // 子进程
   int fd = apinfo->fd;
   char fileData[READ_BUFFER_SIZE];
+  fd = fd; fileData[0] = fileData[0];
   if (apinfo->ftype == WAV) {
     while (1) {
       int nRead = read(fd, fileData, READ_BUFFER_SIZE);
+      printf("nRead: %d\n", nRead);
       if (nRead == 0) exit(0);
       writeDecodedAudio(fileData, nRead);
     }

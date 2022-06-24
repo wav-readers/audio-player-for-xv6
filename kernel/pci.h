@@ -26,3 +26,6 @@ uint16 get_volume();
 void test_play();
 void play();
 void add_sound_node(struct sound_node *node);
+void clear_sound_queue();
+int resume();
+int pause();

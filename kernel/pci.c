@@ -49,7 +49,7 @@ read_pci_config(uint16 bus, uint16 slot, uint16 func, uint16 offset)
 void
 set_sample_rate(uint32 rate)
 {
-  Write8(PCIE_PIO | (nabmba + 0x1b), 0);
+  Write8(PCIE_PIO | (nabmba + 0x1b), 0); // clear control register
   Write16(PCIE_PIO | (namba + 0x2c), rate & 0xffff);
   Write16(PCIE_PIO | (namba + 0x2e), rate & 0xffff);
   Write16(PCIE_PIO | (namba + 0x30), rate & 0xffff);
@@ -66,6 +66,35 @@ uint16
 get_volume()
 {
   return Read16(PCIE_PIO | (namba + 0x18));
+}
+
+void
+clear_sound_queue()
+{
+  Write8(PCIE_PIO | (nabmba + 0x1b), 0); // clear control register
+  sound_queue_head = 0;
+}
+
+int
+resume()
+{
+  int cur_status = Read8(PCIE_PIO | (nabmba + 0x1b)); // read control register
+  if (cur_status == 0) {
+    Write8(PCIE_PIO | (nabmba + 0x1b), 5); // resume
+    return 0;
+  }
+  return -1;
+}
+
+int
+pause()
+{
+  int cur_status = Read8(PCIE_PIO | (nabmba + 0x1b)); // read control register
+  if (cur_status == 5) {
+    Write8(PCIE_PIO | (nabmba + 0x1b), 0); // pause
+    return 0;
+  }
+  return -1;
 }
 
 void
