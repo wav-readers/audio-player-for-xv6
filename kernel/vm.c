@@ -24,6 +24,12 @@ kvmmake(void)
   kpgtbl = (pagetable_t) kalloc();
   memset(kpgtbl, 0, PGSIZE);
 
+  // map the PCIE_PIO space
+  kvmmap(kpgtbl, (uint64)PCIE_PIO, (uint64)PCIE_PIO, 0x10000, PTE_R | PTE_W);
+
+  // map the PCIE_MMIO space
+  kvmmap(kpgtbl, (uint64)PCIE_MMIO, (uint64)PCIE_MMIO, 0x40000000, PTE_R | PTE_W);
+
   // uart registers
   kvmmap(kpgtbl, UART0, UART0, PGSIZE, PTE_R | PTE_W);
 
@@ -42,6 +48,9 @@ kvmmake(void)
   // map the trampoline for trap entry/exit to
   // the highest virtual address in the kernel.
   kvmmap(kpgtbl, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
+
+  // map the pic configuration space
+  kvmmap(kpgtbl, PCIE_ECAM, PCIE_ECAM, 0x10000000, PTE_R | PTE_W);
 
   // map kernel stacks
   proc_mapstacks(kpgtbl);

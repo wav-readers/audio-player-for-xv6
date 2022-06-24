@@ -50,6 +50,17 @@ printint(int xx, int base, int sign)
 }
 
 static void
+printhex(uint64 x, int bits)
+{
+  int i;
+  consputc('0');
+  consputc('x');
+  for (i = bits - 1; i >= 0; i--) {
+    consputc(digits[(x >> (i * 4)) & 0xf]);
+  }
+}
+
+static void
 printptr(uint64 x)
 {
   int i;
@@ -98,6 +109,18 @@ printf(char *fmt, ...)
         s = "(null)";
       for(; *s; s++)
         consputc(*s);
+      break;
+    case '8': // FOR TEST ONLY
+      printhex(va_arg(ap, uint64), 2);
+      break;
+    case '6':
+      printhex(va_arg(ap, uint64), 4);
+      break;
+    case '2':
+      printhex(va_arg(ap, uint64), 8);
+      break;
+    case '4':
+      printhex(va_arg(ap, uint64), 16);
       break;
     case '%':
       consputc('%');

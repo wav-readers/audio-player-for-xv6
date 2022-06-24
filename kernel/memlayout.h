@@ -55,6 +55,15 @@
 // each surrounded by invalid guard pages.
 #define KSTACK(p) (TRAMPOLINE - ((p)+1)* 2*PGSIZE)
 
+// map the virt memory space
+#define PCIE_PIO 0x3000000L
+
+// map the PCIE_MMIO
+#define PCIE_MMIO 0x40000000L
+
+// map the PIC configuration space in kernel space
+#define PCIE_ECAM 0x30000000L
+
 // User memory layout.
 // Address zero first:
 //   text

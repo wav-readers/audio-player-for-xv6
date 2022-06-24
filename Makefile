@@ -28,7 +28,8 @@ OBJS = \
   $K/sysfile.o \
   $K/kernelvec.o \
   $K/plic.o \
-  $K/virtio_disk.o
+  $K/virtio_disk.o \
+  $K/pci.o
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
@@ -93,7 +94,7 @@ ULIB =\
 	$U/printf.o\
 	$U/umalloc.o\
 	$U/wav.o\
-	$U/aplaycore.o
+	$U/aplaycore.o\
 
 _%: %.o $(ULIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $@ $^
@@ -169,11 +170,10 @@ ifndef CPUS
 CPUS := 1 # 3 thss
 endif
 
-QEMUEXTRA = -snapshot
-QEMUOPTS = -machine virt -bios none -kernel $K/kernel -m 128M -smp $(CPUS) -nographic
+QEMUOPTS = -machine virt -bios none -kernel $K/kernel -m 512M -smp $(CPUS) -nographic
 QEMUOPTS += -drive file=fs.img,if=none,format=raw,id=x0
 QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
-QEMUOPTS += -device intel-hda
+QEMUOPTS += -device AC97
 
 qemu: $K/kernel fs.img
 	$(QEMU) $(QEMUOPTS)

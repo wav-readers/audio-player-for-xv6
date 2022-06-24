@@ -4,6 +4,11 @@
 #include "riscv.h"
 #include "defs.h"
 
+#include "spinlock.h"
+#include "sleeplock.h"
+#include "fs.h"
+#include "file.h"
+
 volatile static int started = 0;
 
 // start() jumps here in supervisor mode on all CPUs.
@@ -28,6 +33,7 @@ main()
     iinit();         // inode table
     fileinit();      // file table
     virtio_disk_init(); // emulated hard disk
+    pci_init();      // ich6 device
     userinit();      // first user process
     __sync_synchronize();
     started = 1;
