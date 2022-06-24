@@ -189,6 +189,8 @@ devintr()
       uartintr();
     } else if(irq == VIRTIO0_IRQ){
       virtio_disk_intr();
+    } else if(irq == PCI_IRQ) {
+      soundintr();
     } else if(irq){
       printf("unexpected interrupt irq=%d\n", irq);
     }

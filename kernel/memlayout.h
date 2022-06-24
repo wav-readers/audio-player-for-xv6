@@ -57,6 +57,7 @@
 
 // map the virt memory space
 #define PCIE_PIO 0x3000000L
+#define PCI_IRQ 33
 
 // map the PCIE_MMIO
 #define PCIE_MMIO 0x40000000L

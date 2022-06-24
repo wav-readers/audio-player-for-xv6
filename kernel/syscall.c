@@ -110,6 +110,7 @@ extern uint64 sys_setVolume(void);
 extern uint64 sys_setPlay(void);
 extern uint64 sys_writeDecodedAudio(void);
 extern uint64 sys_clearSoundCardBuffer(void);
+extern uint64 sys_finishWriteAudio(void);
 
 static uint64 (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -139,6 +140,7 @@ static uint64 (*syscalls[])(void) = {
 [SYS_setPlay] sys_setPlay,
 [SYS_writeDecodedAudio] sys_writeDecodedAudio,
 [SYS_clearSoundCardBuffer] sys_clearSoundCardBuffer,
+[SYS_finishwriteaudio]   sys_finishWriteAudio
 };
 
 void

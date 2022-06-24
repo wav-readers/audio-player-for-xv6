@@ -26,3 +26,4 @@
 #define SYS_setPlay 25
 #define SYS_writeDecodedAudio 26
 #define SYS_clearSoundCardBuffer 27
+#define SYS_finishwriteaudio 28

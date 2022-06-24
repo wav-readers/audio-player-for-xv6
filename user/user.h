@@ -31,6 +31,7 @@ void setVolume(int volume, int maxVolume);
 void setPlay(int play);
 void writeDecodedAudio(char *decodedData, uint size);
 void clearSoundCardBuffer();
+int finishwriteaudio(void);
 
 // ulib.c
 int stat(const char*, struct stat*);

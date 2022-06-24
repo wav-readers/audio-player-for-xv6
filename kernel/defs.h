@@ -190,3 +190,4 @@ void            pci_init();
 uint32          read_pci_config(uint16 bus, uint16 slot, uint16 func, uint16 offset);
 void            sound_card_init(uint16 bus, uint16 slot, uint16 func, uint16 offset);
 void            test_play();
+void            soundintr(void);

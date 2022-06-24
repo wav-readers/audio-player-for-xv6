@@ -105,10 +105,24 @@ int apReadDecode(struct ApAudioPlayInfo *apinfo) {
   if (apinfo->ftype == WAV) {
     while (1) {
       int nRead = read(fd, fileData, READ_BUFFER_SIZE);
-      if (nRead == 0) exit(0);
+      printf("checking in apreaddecode\n");
+      /*for (int j = 0; j < 16; j++) {
+        int start = j * 64;
+        for (int i = 0; i < 16; ++i) {
+          printf("%d: %d\n", start+i, fileData[start+i]);
+        }
+      }*/
+      printf("nRead: %d\n", nRead);
+      if (nRead == 0) {
+        finishwriteaudio();
+        exit(0);
+      }
       writeDecodedAudio(fileData, nRead);
+      //printf("in child process\n");
+      //printf("fileData: %p\n", fileData);
     }
   }
+  //exit(0);
   /* 处理其他音频格式
     #define DEC_BUFFER_SIZE 100
     void (*decode)(const char *fileData, char *decodedData) = 0;
