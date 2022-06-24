@@ -36,9 +36,6 @@ int readWavHead(int fd, struct WavInfo *info);
 // question: 【是否可能直接将解码后的数据写入声卡缓冲区，从而取消“解码后数据”的缓冲区？】
 void decodeWav(const char *fileData, char *decodedData);
 
-
-void getHead(char *fname, struct WavInfo *info);
 void getData(char *fname, struct WavInfo *info); 
-int print_binary(int dec);
 
 #endif
