@@ -8,7 +8,8 @@
 
 #include "user/wav.h"
 
-// mp3相关内容以"未实现"标记。没写todo因为可能无余力实现
+#define READ_BUFFER_SIZE 4096
+
 enum ApFileType { WAV, MP3 };
 
 struct ApAudioPlayInfo {

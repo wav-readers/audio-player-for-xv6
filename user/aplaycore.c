@@ -98,31 +98,29 @@ int apReadDecode(struct ApAudioPlayInfo *apinfo) {
     return pid;
   }
   // 子进程
-/// @todo 换成实际的缓冲区大小
-#define READ_BUFFER_SIZE 100
   int fd = apinfo->fd;
   char fileData[READ_BUFFER_SIZE];
   if (apinfo->ftype == WAV) {
     while (1) {
-      int n = read(fd, fileData, READ_BUFFER_SIZE);
-      if (n == 0) exit(0);
-      writeDecodedAudio(fileData, READ_BUFFER_SIZE);
+      int nRead = read(fd, fileData, READ_BUFFER_SIZE);
+      if (nRead == 0) exit(0);
+      writeDecodedAudio(fileData, nRead);
     }
   }
   /* 处理其他音频格式
     void (*decode)(const char *fileData, char *decodedData) = 0;
     switch (apinfo->ftype) {
       case MP3:
-
+        decode = decodeMp3;
         break;
     }
   #define DEC_BUFFER_SIZE 100
     char decodedData[DEC_BUFFER_SIZE];
     while (1) {
-      int n = read(fd, fileData, READ_BUFFER_SIZE);
-      if (n == 0) exit(0);
-      decode(fileData, decodedData);
-      writeDecodedAudio(decodedData, DEC_BUFFER_SIZE);
+      int nRead = read(fd, fileData, READ_BUFFER_SIZE);
+      if (nRead == 0) exit(0);
+      int nDec = decode(fileData, decodedData);
+      writeDecodedAudio(decodedData, nDec);
     } */
 }
 
