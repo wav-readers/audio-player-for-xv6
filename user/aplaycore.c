@@ -68,7 +68,7 @@ int apOpenAudio(const char *file, struct ApAudioPlayInfo *apinfo) {
   // 填写其他信息：音频文件、播放状态、后台信息
   apinfo->fname = file;
   apinfo->isPlaying = 0;
-  apinfo->volume = getVolume();
+  apinfo->volume = getVolume(apinfo->maxVolume);
   apinfo->fd = fd;
   apinfo->readDecPid = -1;
   return fd;
