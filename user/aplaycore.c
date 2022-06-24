@@ -88,6 +88,7 @@ void apShowAudioInfo(struct ApAudioPlayInfo *apinfo) {
 }
 
 int apReadDecode(struct ApAudioPlayInfo *apinfo) {
+  printf("in ap read decode\n");
   int pid = fork();
   if (pid < 0) {
     fprintf(2, "fail to fork");
@@ -122,7 +123,7 @@ int apReadDecode(struct ApAudioPlayInfo *apinfo) {
       int nDec = decode(fileData, decodedData);
       writeDecodedAudio(decodedData, nDec);
     } */
-    
+  return 0;
 }
 
 int apCloseAudio(struct ApAudioPlayInfo *apinfo) {

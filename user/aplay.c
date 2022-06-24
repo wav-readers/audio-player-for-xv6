@@ -124,8 +124,9 @@ void runcmd(struct cmd *cmd) {
       if (apinfo->hasOpened) apCloseAudio(apinfo);
       if (apOpenAudio(cmd->argv[1], apinfo) >= 0) {
         apShowAudioInfo(apinfo);
-        apReadDecode(apinfo);
+        apReadDecode(apinfo); 
         apSetPlay(1, apinfo);
+        printf("finish decoding\n");
       }
       break;
     case VOLUME:
