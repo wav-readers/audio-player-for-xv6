@@ -3,6 +3,18 @@
 //简便起见，假定声卡一次只会播放一个音频。
 //故暂停、调音量等操作直接干预声卡，这样就只需要控制器和读译两个进程。
 
+/* 支持更多音频格式：
+1. 修改enum ApFileType
+
+2. 在apOpenAudio函数中支持该格式。一般需要实现读取文件头的函数。
+
+3. 实现解码函数，形如
+// 从fileData中读取数据，解码后写入decodedData
+void decodeMp3(const char *fileData, char *decodedData);
+
+4. 在apReadDecode函数中应用对该格式音频的解码
+*/
+
 #ifndef USER_APLAYCORE_H
 #define USER_APLAYCORE_H
 

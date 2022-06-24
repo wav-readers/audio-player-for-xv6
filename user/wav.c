@@ -1,9 +1,6 @@
 #include "wav.h"
 
 #define HEAD_LENGTH 44
-#define BUF_LENGTH 400
-#define GET_DATA_BATCH_SIZE 320
-// 256KB
 
 int readWavHead(int fd, struct WavInfo *info) {
     char buf[HEAD_LENGTH];
@@ -101,85 +98,4 @@ int readWavHead(int fd, struct WavInfo *info) {
         return -1;
     }
     return 0;
-}
-
-/// @todo
-void decodeWav(const char *fileData, char *decodedData) {
-  return;
-}
-
-void getData(char *fname, struct WavInfo *info)
-{
-    //记录文件读取位置
-    int pos = info->start_pos;
-
-    //为加快处理速度，根据ChunkSize将文件一次读入内存
-    int fd = open(fname, O_RDONLY);
-    if (fd < 0)
-    {
-        fprintf(2, "getData: cannot open %s\n", fname);
-        exit(1);
-    }
-
-    fprintf(2, "info->chunk_size %d\n",info->chunk_size);
-
-    short getdata_batch = GET_DATA_BATCH_SIZE;
-
-    char file_data[getdata_batch + 8];
-
-    int size = read(fd, file_data, getdata_batch + 8);
-
-    close(fd);
-
-    if (size != getdata_batch + 8)
-    {
-        fprintf(2, "getData: read error\n");
-        exit(1);
-    }
-
-    fprintf(2, "getData: pos at %d,start pos at %d\n", pos,info->start_pos);
-    fprintf(2, "getData: read %d bytes, data chunk size %d\n", size,info->data_chunk_size);
-    printf("getData:bits_per_sample %d\n",info->bits_per_sample);
-    
-    //TODO 这里要改，这一轮有多少要读。最后一轮不需要读这么多
-    short read_size = getdata_batch;
-    //以每帧2字节为例
-
-    if (info->num_channels == 1){
-        while (pos < (info->start_pos + read_size))
-        {   
-            printf("\nboth channels:");
-            ushort i = 0;           
-            while(i < info->bits_per_sample){
-                printf("%d ",*(short *)&file_data[pos]);
-                pos++;
-                i++;
-            }
-        }
-    }
-    else if (info->num_channels == 2){
-        while (pos < info->start_pos + read_size)
-        {
-            printf("\nleft channel:");           
-            ushort i = 0;           
-            while(i < info->bits_per_sample){
-                printf("%d ",*(short *)&file_data[pos]);
-                pos++;
-                i++;
-            }
-            
-            printf("\nright channel:");   
-            i = 0;           
-            while(i < info->bits_per_sample){
-                printf("%d ",*(short *)&file_data[pos]);
-                pos++;
-                i++;
-            }
-        }
-    }
-    else{
-        fprintf(2, "error in num_channels\n");        
-    }
-
-    printf("\n ");
 }

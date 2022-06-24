@@ -31,11 +31,5 @@ struct WavInfo
  * @return 0 if 正确执行，-1 if 该wav文件有问题
  */
 int readWavHead(int fd, struct WavInfo *info);
-// 从fileData中读取数据，解码后写入decodedData
-// question: 每次读取多少数据来解码？每次解码会产生多少解码后的数据？此数据用于指导缓冲区大小
-// question: 【是否可能直接将解码后的数据写入声卡缓冲区，从而取消“解码后数据”的缓冲区？】
-void decodeWav(const char *fileData, char *decodedData);
-
-void getData(char *fname, struct WavInfo *info); 
 
 #endif
