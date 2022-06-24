@@ -11,7 +11,7 @@ enum Command { ERROR, HELP, OPEN, VOLUME, PAUSE, PLAY, STOP, QUIT };
 #define MAXARGS 3
 #define MAX_CM_LEN 100
 
-struct AudioPlayInfo *apinfo;
+struct ApAudioPlayInfo *apinfo;
 
 void showHelp() {
   printf(
@@ -121,11 +121,11 @@ void runcmd(struct cmd *cmd) {
         fprintf(2, "usage: %s <file path>\n", cmd->argv[0]);
         return;
       }
-      if (apinfo->hasOpened) closeAudio(apinfo);
-      if (openAudio(cmd->argv[1], apinfo) >= 0) {
-        showAudioInfo(apinfo);
-        beginReadDecode(apinfo);
-        setPlay(1, apinfo);
+      if (apinfo->hasOpened) apCloseAudio(apinfo);
+      if (apOpenAudio(cmd->argv[1], apinfo) >= 0) {
+        apShowAudioInfo(apinfo);
+        apReadDecode(apinfo);
+        apSetPlay(1, apinfo);
       }
       break;
     case VOLUME:
@@ -133,17 +133,17 @@ void runcmd(struct cmd *cmd) {
         fprintf(2, "usage: %s <target value>\n", cmd->argv[0]);
         return;
       }
-      setVolume(atoi(cmd->argv[1]), apinfo);
+      apSetVolume(atoi(cmd->argv[1]), apinfo);
       printf("current volume: %s\n", cmd->argv[1]);
       break;
     case PAUSE:
-      if (apinfo->hasOpened) setPlay(0, apinfo);
+      if (apinfo->hasOpened) apSetPlay(0, apinfo);
       break;
     case PLAY:
-      if (apinfo->hasOpened) setPlay(1, apinfo);
+      if (apinfo->hasOpened) apSetPlay(1, apinfo);
       break;
     case STOP:
-      if (apinfo->hasOpened) closeAudio(apinfo);
+      if (apinfo->hasOpened) apCloseAudio(apinfo);
       break;
     case QUIT:
       exit(0);
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
   printf("Audio Player 1.0\n");
   printf("Type \"help\" for more information.\n");
 
-  apinfo = AudioPlayInfo();
+  apinfo = ApAudioPlayInfo();
   char buf[MAX_CM_LEN];
   struct cmd *cmd = (struct cmd *)malloc(sizeof(struct cmd));
   while (getcmd(buf, sizeof(buf)) >= 0) {

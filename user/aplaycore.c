@@ -4,40 +4,34 @@
 #include "user/user.h"
 #include "user/wav.h"
 
-int getVolume() {
-  // 做成系统调用，无需在此库中提供对外接口
-  // 应用程序可从apinfo中读取volume信息
-  return 0;
-}
-
-struct AudioPlayInfo *AudioPlayInfo() {
-  struct AudioPlayInfo *apinfo =
-      (struct AudioPlayInfo *)malloc(sizeof(struct AudioPlayInfo));
+struct ApAudioPlayInfo *ApAudioPlayInfo() {
+  struct ApAudioPlayInfo *apinfo =
+      (struct ApAudioPlayInfo *)malloc(sizeof(struct ApAudioPlayInfo));
   apinfo->hasOpened = 0;
-  apinfo->volume = getVolume();
+  apinfo->maxVolume = 100;
+  apinfo->volume = getVolume(apinfo->maxVolume);
   return apinfo;
 }
 
-///@todo
-// 做成系统调用，无需在此库中提供对外接口
-int clearSoundCardBuffer() { return 0; }
-// 做成系统调用，无需在此库中提供对外接口
-int setSampleRate(uint sample_rate) { return 0; }
-/// 以上
+void apSetMaxVolume(int maxVolume, struct ApAudioPlayInfo *apinfo) {
+  apinfo->maxVolume = maxVolume;
+}
 
-///@todo 以下在系统调用的基础上套层壳，使成为库函数而非系统调用
-int setPlay(int play, struct AudioPlayInfo *apinfo) {
-  // 调用系统调用
+int apSetPlay(int play, struct ApAudioPlayInfo *apinfo) {
+  if (play == apinfo->isPlaying) {  // 无需修改，则直接返回，以减少开销
+    return 0;
+  }
+  setPlay(play);
+  apinfo->isPlaying = play;
   return 0;
 }
 
-int setVolume(int volume, struct AudioPlayInfo *apinfo) {
-  // 调用系统调用
+int apSetVolume(int volume, struct ApAudioPlayInfo *apinfo) {
+  setVolume(volume, apinfo->maxVolume);
   return volume;
 }
-/// 以上
 
-int openAudio(const char *file, struct AudioPlayInfo *apinfo) {
+int apOpenAudio(const char *file, struct ApAudioPlayInfo *apinfo) {
   char *filext = strrchr(file, '.');
   if (strcmp(filext, ".wav") == 0) {
     apinfo->ftype = WAV;
@@ -80,7 +74,7 @@ int openAudio(const char *file, struct AudioPlayInfo *apinfo) {
   return fd;
 }
 
-void showAudioInfo(struct AudioPlayInfo *apinfo) {
+void apShowAudioInfo(struct ApAudioPlayInfo *apinfo) {
   printf("file name: %s\n", apinfo->fname);
   switch (apinfo->ftype) {
     case WAV:
@@ -93,7 +87,7 @@ void showAudioInfo(struct AudioPlayInfo *apinfo) {
   printf("volume: %d\n", apinfo->volume);
 }
 
-int beginReadDecode(struct AudioPlayInfo *apinfo) {
+int apReadDecode(struct ApAudioPlayInfo *apinfo) {
   int pid = fork();
   if (pid < 0) {
     fprintf(2, "fail to fork");
@@ -104,31 +98,35 @@ int beginReadDecode(struct AudioPlayInfo *apinfo) {
     return pid;
   }
   // 子进程
-  void (*decode)(const char *fileData, char *decodedData) = 0;
-  switch (apinfo->ftype) {
-    case WAV:
-      decode = decodeWav;
-      break;
-    case MP3:
-      // 未实现
-      break;
+/// @todo 换成实际的缓冲区大小
+#define READ_BUFFER_SIZE 100
+  int fd = apinfo->fd;
+  char fileData[READ_BUFFER_SIZE];
+  if (apinfo->ftype == WAV) {
+    while (1) {
+      int n = read(fd, fileData, READ_BUFFER_SIZE);
+      if (n == 0) exit(0);
+      writeDecodedAudio(fileData, READ_BUFFER_SIZE);
+    }
   }
-  ///@todo
-  // 创建缓冲区
-  // question: 缓冲区大小?
-  while (1) {
-    // 将文件读入「解码前数据」缓冲区。已被读尽则exit(0)
-    exit(0);
+  /* 处理其他音频格式
+    void (*decode)(const char *fileData, char *decodedData) = 0;
+    switch (apinfo->ftype) {
+      case MP3:
 
-    // 调用decode函数解码
-    printf("只是为了混过编译%s", decode);
-
-    // 调用系统调用，将解码后的数据写入声卡缓冲区
-    // 若可能卡顿，可考虑优化缓存机制？
-  }
+        break;
+    }
+  #define DEC_BUFFER_SIZE 100
+    char decodedData[DEC_BUFFER_SIZE];
+    while (1) {
+      int n = read(fd, fileData, READ_BUFFER_SIZE);
+      if (n == 0) exit(0);
+      decode(fileData, decodedData);
+      writeDecodedAudio(decodedData, DEC_BUFFER_SIZE);
+    } */
 }
 
-int closeAudio(struct AudioPlayInfo *apinfo) {
+int apCloseAudio(struct ApAudioPlayInfo *apinfo) {
   //杀读译进程
   kill(apinfo->readDecPid);
   wait(0);
