@@ -1,32 +1,16 @@
-
-
 #include "wav.h"
 
-#define HEAD_LENGTH 60
+#define HEAD_LENGTH 44
 #define BUF_LENGTH 400
 #define GET_DATA_BATCH_SIZE 320
 // 256KB
 
-/// @todo
 int readWavHead(int fd, struct WavInfo *info) {
-
-    return 0;
-}
-
-/// @todo
-void decodeWav(const char *fileData, char *decodedData) {
-  return;
-}
-
-void getHead(char *fname, struct WavInfo *info)
-{
-    int fd = open(fname, O_RDONLY);
-    char buf[BUF_LENGTH];
+    char buf[HEAD_LENGTH];
     int n;
     if (fd < 0)
     {
-        fprintf(2, "getHead: cannot open %s\n", fname);
-        exit(1);
+        return -1;
     }
     if ((n = read(fd, buf, HEAD_LENGTH)) > 0)
     {
@@ -100,7 +84,6 @@ void getHead(char *fname, struct WavInfo *info)
 
         //读取Data Chunk的非data部分
         info->data_chunk_size = *(int *)&buf[pos];
-        fprintf(2, "buf[pos] %c bytes\n", buf[pos]);
         pos += 4;
 
         //记录真正音频数据的开始位置
@@ -111,29 +94,19 @@ void getHead(char *fname, struct WavInfo *info)
     }
     else
     {
-        fprintf(2, "getHead: read error\n");
-        exit(1);
+        return -1;
     }
-    close(fd);
+    if (info->start_pos != HEAD_LENGTH)
+    {
+        return -1;
+    }
+    return 0;
 }
 
-
-int print_binary(int dec){
-	int result = 0,temp = 1,yushu = 0;
-	while(1){
-		yushu = dec%2;
-		dec/=2;
-		result+=yushu*temp;
-		temp*=10;
-		if(dec<2)
-		{
-			result+=dec*temp;
-			break;
-		}
-	}
-	return result;
+/// @todo
+void decodeWav(const char *fileData, char *decodedData) {
+  return;
 }
-
 
 void getData(char *fname, struct WavInfo *info)
 {
