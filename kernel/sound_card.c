@@ -77,7 +77,7 @@ uint64 sys_writeDecodedAudio(void)
 
   char buf[4097];
   if (argint(1, &size) < 0 || size > 4096) return -1;
-  
+
   uint64 buf_addr;
   if (argaddr(0, &buf_addr) < 0)
     return -1;
