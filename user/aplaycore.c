@@ -27,8 +27,10 @@ int apSetPlay(int play, struct ApAudioPlayInfo *apinfo) {
 }
 
 int apSetVolume(int volume, struct ApAudioPlayInfo *apinfo) {
+  int oldVolume = apinfo->volume;
   setVolume(volume, apinfo->maxVolume);
-  return volume;
+  apinfo->volume = volume;
+  return oldVolume;
 }
 
 int apOpenAudio(const char *file, struct ApAudioPlayInfo *apinfo) {
@@ -123,7 +125,7 @@ int apReadDecode(struct ApAudioPlayInfo *apinfo) {
       int nDec = decode(fileData, decodedData);
       writeDecodedAudio(decodedData, nDec);
     } */
-  return 0;
+  exit(0);
 }
 
 int apCloseAudio(struct ApAudioPlayInfo *apinfo) {
