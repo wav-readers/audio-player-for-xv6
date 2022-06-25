@@ -175,7 +175,7 @@ play()
 
 // process interrupt: soundQueue go front 1.
 void soundintr(void) {
-  printf("in soundintr\n");
+  //printf("in soundintr\n");
   acquire(&sound_lock);
   if (sound_queue_head == 0) {
     panic("empty sound queue");
@@ -202,7 +202,7 @@ void soundintr(void) {
 void
 add_sound_node(struct sound_node *node)
 {
-  printf("adding sounding node %d\n", add_node_count); add_node_count += 1;
+  //printf("adding sounding node %d\n", add_node_count); add_node_count += 1;
   acquire(&sound_lock);
   node->next = 0;
   struct sound_node **tail;

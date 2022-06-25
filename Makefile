@@ -144,8 +144,7 @@ UPROGS=\
 
 # thss:for storage
 MUSIC=\
-	$U/xv6_test.wav\
-	$U/ngguy.wav\
+	$U/xv6_test.wav
 
 # fs.img: mkfs/mkfs README $(UPROGS)
 # 	mkfs/mkfs fs.img README $(UPROGS)

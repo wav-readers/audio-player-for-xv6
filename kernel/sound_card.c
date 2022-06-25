@@ -97,7 +97,7 @@ uint64 sys_writeDecodedAudio(void)
   
   
   if (used_size == 0) {
-    printf("this is a new buffer\n");
+    //printf("this is a new buffer\n");
     // this is a new buffer
     memset(&sound_buffer[buffer_index], 0, sizeof(struct sound_node));
   }
