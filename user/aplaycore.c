@@ -65,6 +65,7 @@ int apOpenAudio(const char *file, struct ApAudioPlayInfo *apinfo) {
       //未实现
       break;
   }
+  clearSoundCardBuffer();
 
   apinfo->hasOpened = 1;
   // 填写其他信息：音频文件、播放状态、后台信息

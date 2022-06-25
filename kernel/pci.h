@@ -1,7 +1,7 @@
 #include "types.h"
 
 #define DMA_BUFFER_NUM 32
-#define DMA_SAMPLE_NUM 4096
+#define DMA_SAMPLE_NUM 1024
 #define DMA_BUFFER_SIZE (DMA_SAMPLE_NUM * 2)
 
 #define PCI_CONFIG_SPACE_CMD 0x04
