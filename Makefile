@@ -142,8 +142,10 @@ UPROGS=\
 	$U/_zombie\
 	$U/_aplay\
 
+# thss:for storage
 MUSIC=\
-	$U/xv6_test.wav # thss:for storage
+	$U/xv6_test.wav\
+	$U/ngguy.wav\
 
 # fs.img: mkfs/mkfs README $(UPROGS)
 # 	mkfs/mkfs fs.img README $(UPROGS)

@@ -72,7 +72,7 @@ uint64 sys_setPlay(void)
 // void writeDecodedAudio(char *decodedData, uint size);
 uint64 sys_writeDecodedAudio(void)
 {
-  printf("in sys write decode\n");
+  //printf("in sys write decode\n");
   int bufsize = DMA_BUFFER_NUM * DMA_BUFFER_SIZE, size;
 
   char buf[2049];
@@ -87,7 +87,7 @@ uint64 sys_writeDecodedAudio(void)
     return -1;
 
   // check data
-  printf("checking data in sys write\n");
+  //printf("checking data in sys write\n");
   /*for (int j = 0; j < 16; j++) {
     int start = j * 64;
     for (int i = 0; i < 16; ++i) {
@@ -102,10 +102,10 @@ uint64 sys_writeDecodedAudio(void)
     memset(&sound_buffer[buffer_index], 0, sizeof(struct sound_node));
   }
   if (bufsize - used_size > size) {
-    printf("data can all fit into buffer\n");
+    // printf("data can all fit into buffer\n");
     // data can all put into current buffer.
     memmove(&sound_buffer[buffer_index].data[used_size], buf, size);
-    printf("checking data after memmov\n");
+    //printf("checking data after memmov\n");
     /*for (int j = 0; j < 16; j++) {
       int start = j * 64;
       for (int i = 0; i < 16; ++i) {
@@ -115,7 +115,7 @@ uint64 sys_writeDecodedAudio(void)
     sound_buffer[buffer_index].flag = 1;
     used_size += size;
   } else {
-    printf("data cannot be put into buffer");
+    // printf("data cannot be put into buffer");
     // data cannot all put into current buffer.
     int remain = bufsize - used_size;
     // then send this buffer to the audio card.
@@ -149,7 +149,7 @@ uint64 sys_writeDecodedAudio(void)
 }
 
 uint64 sys_finishWriteAudio(void) {
-  printf("checking data in finish write\n");
+  //printf("checking data in finish write\n");
   /*for (int j = 0; j < 16; j++) {
     int start = j * 64;
     for (int i = 0; i < 16; ++i) {

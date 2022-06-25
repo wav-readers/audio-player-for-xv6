@@ -109,14 +109,14 @@ int apReadDecode(struct ApAudioPlayInfo *apinfo) {
   if (apinfo->ftype == WAV) {
     while (1) {
       int nRead = read(fd, fileData, READ_BUFFER_SIZE);
-      printf("checking in apreaddecode\n");
+      //printf("checking in apreaddecode\n");
       /*for (int j = 0; j < 16; j++) {
         int start = j * 64;
         for (int i = 0; i < 16; ++i) {
           printf("%d: %d\n", start+i, fileData[start+i]);
         }
       }*/
-      printf("nRead: %d\n", nRead);
+      //printf("nRead: %d\n", nRead);
       if (nRead == 0) {
         finishwriteaudio();
         exit(0);

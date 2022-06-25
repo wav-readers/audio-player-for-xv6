@@ -9,6 +9,7 @@
 
 uint32 namba; // 0x1000
 uint32 nabmba; // 0x1400
+int add_node_count = 0;
 
 uint8 data[DMA_BUFFER_NUM * DMA_BUFFER_SIZE];
 
@@ -49,7 +50,7 @@ read_pci_config(uint16 bus, uint16 slot, uint16 func, uint16 offset)
 void
 set_sample_rate(uint32 rate)
 {
-  Write8(PCIE_PIO | (nabmba + 0x1b), 0); // clear control register
+  Write8(PCIE_PIO | (nabmba + 0x1b), 5); // clear control register
   Write16(PCIE_PIO | (namba + 0x2c), rate & 0xffff);
   Write16(PCIE_PIO | (namba + 0x2e), rate & 0xffff);
   Write16(PCIE_PIO | (namba + 0x30), rate & 0xffff);
@@ -126,7 +127,7 @@ test_play()
   Write8(PCIE_PIO | (nabmba + 0x15), 0x1F);
 
   // write the run bit
-  Write8(PCIE_PIO | (nabmba + 0x1B), 0x5);
+  Write8(PCIE_PIO | (nabmba + 0x1B), 5);
 
   while (1) {
     cycle--;
@@ -158,20 +159,23 @@ play()
     descriptor_list[i].buffer_pointer = base_addr + i * DMA_BUFFER_SIZE;
     descriptor_list[i].buffer_ctrl_and_len = 0x80000000 | DMA_SAMPLE_NUM;
   }
-  Write32(PCIE_PIO | (nabmba + 0x10), (uint64)descriptor_list);
-  // initialize the DMA engine
-  // uint32 base = (uint64)descriptor_list;
-  // Write32(PCIE_PIO | (nabmba + 0x10), base);
+  
+  if (sound_queue_head -> flag) {
+    // initialize the DMA engine
+    Write32(PCIE_PIO | (nabmba + 0x10), (uint64)descriptor_list);
 
-  // write the Last Valid Index
-  Write8(PCIE_PIO | (nabmba + 0x15), 0x1F);
+    // write the Last Valid Index
+    Write8(PCIE_PIO | (nabmba + 0x15), 0x1F);
 
-  // write the run bit
-  Write8(PCIE_PIO | (nabmba + 0x1B), 0x5);
+    // write the run bit
+    Write8(PCIE_PIO | (nabmba + 0x1B), 5);
+  }
+  
 }
 
 // process interrupt: soundQueue go front 1.
 void soundintr(void) {
+  printf("in soundintr\n");
   acquire(&sound_lock);
   if (sound_queue_head == 0) {
     panic("empty sound queue");
@@ -198,7 +202,7 @@ void soundintr(void) {
 void
 add_sound_node(struct sound_node *node)
 {
-  printf("adding sounding node\n");
+  printf("adding sounding node %d\n", add_node_count); add_node_count += 1;
   acquire(&sound_lock);
   node->next = 0;
   struct sound_node **tail;
@@ -262,7 +266,7 @@ sound_card_init(uint16 bus, uint16 slot, uint16 func, uint16 offset)
   printf("NABMBA: %2\n", nabmba);
 
   // removing AC_RESET# bit
-  Write8(PCIE_PIO | (nabmba + 0x2c), 0x2);
+  Write8(PCIE_PIO | (nabmba + 0x2c), 0x3);
 
   // wait for codec to be ready
   wait_time = 1000;
@@ -274,6 +278,8 @@ sound_card_init(uint16 bus, uint16 slot, uint16 func, uint16 offset)
     printf("AC_RESET# bit not cleared for the first time\n");
     return;
   }
+
+  //Write32(PCIE_PIO | (nabmba + 0x2c), 0x1);
 
   // determine the audio codec
   uint16 codec_master_volume = Read16(PCIE_PIO | (nabmba + 0x02));
