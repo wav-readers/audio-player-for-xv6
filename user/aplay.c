@@ -154,7 +154,7 @@ void runcmd(struct cmd *cmd) {
         fprintf(2, "%s <target speed>\n", cmd->argv[0]);
         return;
       }
-      if (!apinfo->hasOpened) fprintf(2, "no file open");
+      if (!apinfo->hasOpened) fprintf(2, "no file open\n");
       if (apSetSpeed(atof(cmd->argv[1]), apinfo) >= 0) {
         printf("current speed: %s\n", cmd->argv[1]);
       }

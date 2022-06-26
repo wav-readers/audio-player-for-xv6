@@ -21,17 +21,10 @@ uint64 sys_setSampleRate()
 {
   int rate; argint(0, &rate);
   if (rate < 0) return -1;
-  // clear buffer
-  //buffer_index = 0; used_size = 0;
-  for (int i = 0; i < BUFFER_NODE_NUM; i++) {
-    //memset(&sound_buffer[i], 0, sizeof(struct sound_node));
-    //sound_buffer[i].flag = 0;
-  }
   set_sample_rate(rate);
   return 0;
 }
 
-// TODO
 // int getVolume(int maxVolume);
 uint64 sys_getVolume(void)
 {
@@ -72,56 +65,51 @@ uint64 sys_setPlay(void)
 // void writeDecodedAudio(char *decodedData, uint size);
 uint64 sys_writeDecodedAudio(void)
 {
-  //printf("in sys write decode\n");
   int bufsize = DMA_BUFFER_NUM * DMA_BUFFER_SIZE, size;
 
   char buf[2049];
   if (argint(1, &size) < 0 || size > 2048) return -1;
 
   uint64 buf_addr;
-  if (argaddr(0, &buf_addr) < 0)
-    return -1;
-  // copy data in virtual address to physical address
+  if (argaddr(0, &buf_addr) < 0) return -1;
+  // copy data in user space to kernel space
   struct proc *p = myproc();
-  if (copyin(p->pagetable, buf, buf_addr, size) < 0)
-    return -1;  
+  if (copyin(p->pagetable, buf, buf_addr, size) < 0) return -1;  
   
-  if (used_size == 0) {
-    //printf("this is a new buffer\n");
-    // this is a new buffer
-    memset(&sound_buffer[buffer_index], 0, sizeof(struct sound_node));
-  }
+  // clear the new buffer
+  if (used_size == 0) memset(&sound_buffer[buffer_index], 0, sizeof(struct sound_node));
+
+  // if data can all fit in the current buffer
   if (bufsize - used_size > size) {
-    // printf("data can all fit into buffer\n");
-    // data can all put into current buffer.
     memmove(&sound_buffer[buffer_index].data[used_size], buf, size);
     sound_buffer[buffer_index].flag = 1;
     used_size += size;
-  } else {
-    // printf("data cannot be put into buffer");
-    // data cannot all put into current buffer.
-    int remain = bufsize - used_size;
-    // then fill this buffer to the full, and send this buffer to the audio card.
-    memmove(&sound_buffer[buffer_index].data[used_size], buf, remain);
+  } 
+  else { 
+    // fill the current buffer...
+    int read_already = bufsize - used_size;
+    memmove(&sound_buffer[buffer_index].data[used_size], buf, read_already);
     sound_buffer[buffer_index].flag = 3; // has been sent
     add_sound_node(&sound_buffer[buffer_index]);
-    // and find a new buffer that is not sent, and make it to be the new buffer.
+    //  and repeatedly look for new buffer
     while (1) {
       int flag = 0;
       for (int i = 0; i < BUFFER_NODE_NUM; ++i) {
-        if (sound_buffer[i].flag != 3) { // has not been sent
+        if (sound_buffer[i].flag == 0) { // buffer can be overwritten
           memset(&sound_buffer[i], 0, sizeof(struct sound_node));
-          if (bufsize > size - remain) {
-            // all remaining data can put into one buffer
-            memmove(&sound_buffer[i].data[0], buf + remain, size - remain);
-            sound_buffer[i].flag = 1; flag = 1;
-            used_size = size - remain; buffer_index = i;
+          // all left data can fit into the new buffer
+          if (bufsize > size - read_already) {
+            memmove(&sound_buffer[i].data[0], buf + read_already, size - read_already);
+            sound_buffer[i].flag = 1;
+            used_size = size - read_already;
+            flag = 1; buffer_index = i;
             break;
-          } else {
-            // send this new buffer
-            memmove(&sound_buffer[i].data[0], buf + remain, bufsize);
-            remain += bufsize; sound_buffer[i].flag = 3; // has been sent
+          }
+          else { // fill this new buffer and send it
+            memmove(&sound_buffer[i].data[0], buf + read_already, bufsize);
+            sound_buffer[i].flag = 3;
             add_sound_node(&sound_buffer[i]);
+            read_already += bufsize;
           }
         }
       }
@@ -132,14 +120,7 @@ uint64 sys_writeDecodedAudio(void)
 }
 
 uint64 sys_finishWriteAudio(void) {
-  //printf("checking data in finish write\n");
-  /*for (int j = 0; j < 16; j++) {
-    int start = j * 64;
-    for (int i = 0; i < 16; ++i) {
-      printf("%d: %8\n", start+i, sound_buffer[buffer_index].data[start+i]);
-    }
-  }*/
-  // send the buffer to audio card
+  // send the last buffer
   if (used_size > 0) { 
     sound_buffer[buffer_index].flag = 3; add_sound_node(&sound_buffer[buffer_index]); 
   }
