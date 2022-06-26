@@ -4,7 +4,7 @@
 //故暂停、调音量等操作直接干预声卡，这样就只需要控制器和读译两个进程。
 
 /* 支持更多音频格式：
-1. 修改enum ApFileType
+1. 在enum ApFileType与struct ApAudioPlayInfo的union中添加该格式
 
 2. 在apOpenAudio函数中支持该格式。一般需要实现读取文件头的函数。
 
