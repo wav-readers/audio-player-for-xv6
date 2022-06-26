@@ -14,13 +14,13 @@ enum Command { ERROR, HELP, OPEN, VOLUME, SPEED, PAUSE, RESUME, STOP, QUIT };
 struct ApAudioPlayInfo *apinfo;
 
 void showHelp() {
-  printf("open: \n");
+  printf("open:\n");
   printf("    open <file path>       open the file and play.\n");
   printf("                           File already open will be closed first.\n");
 
-  printf("volume: \n");
+  printf("volume: default max volume is 100.\n");
   printf("    volume                 print current volume\n");
-  printf("    volume <target volume>  set volume\n");
+  printf("    volume <target volume> set volume\n");
   printf("speed: default speed is 1.0\n");
   printf("    speed <target speed>   set play speed\n");
 
@@ -28,7 +28,7 @@ void showHelp() {
   printf("    pause                  pause playing\n");
   printf("resume:\n");
   printf("    resume                 resume playing\n");
-  printf("stop: \n");
+  printf("stop:\n");
   printf("    stop                   stop playing\n");
 
   printf("quit:\n");
@@ -154,22 +154,23 @@ void runcmd(struct cmd *cmd) {
         fprintf(2, "%s <target speed>\n", cmd->argv[0]);
         return;
       }
-      
-      if (apSetSpeed(atof(cmd->argv[1]), apinfo) >=0) {
+      if (!apinfo->hasOpened) fprintf(2, "no file open");
+      if (apSetSpeed(atof(cmd->argv[1]), apinfo) >= 0) {
         printf("current speed: %s\n", cmd->argv[1]);
       }
       return;
-      
+
     case PAUSE:
-      if (apinfo->hasOpened) apSetPlay(0, apinfo);
+      apinfo->hasOpened ? apSetPlay(0, apinfo) : fprintf(2, "no file open\n");
       return;
     case RESUME:
-      if (apinfo->hasOpened) apSetPlay(1, apinfo);
+      apinfo->hasOpened ? apSetPlay(1, apinfo) : fprintf(2, "no file open\n");
       return;
     case STOP:
-      if (apinfo->hasOpened) apCloseAudio(apinfo);
+      apinfo->hasOpened ? apCloseAudio(apinfo) : fprintf(2, "no file open\n");
       return;
     case QUIT:
+      if (apinfo->hasOpened) apCloseAudio(apinfo);
       exit(0);
   }
 }
