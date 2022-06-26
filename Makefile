@@ -150,8 +150,8 @@ MUSIC=\
 
 # fs.img: mkfs/mkfs README $(UPROGS)
 # 	mkfs/mkfs fs.img README $(UPROGS)
-fs.img: mkfs/mkfs README $(MUSIC) $(UPROGS)
-	mkfs/mkfs fs.img README $(MUSIC) $(UPROGS)
+fs.img: mkfs/mkfs README $(UPROGS) $(MUSIC)
+	mkfs/mkfs fs.img README $(UPROGS) $(MUSIC)
 
 -include kernel/*.d user/*.d
 
