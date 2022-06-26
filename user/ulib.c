@@ -105,6 +105,31 @@ atoi(const char *s)
   return n;
 }
 
+double
+atof(const char *s)
+{
+  double n = 0.0;
+  double d = 10.0;
+
+  while (*s == ' ') s++;
+  if (!(*s >= '0' && *s <= '9')) return n;
+
+  while (*s >= '0' && *s <= '9' && *s != '.') {
+    n = n * 10.0 + *s - '0';
+    s++;
+  }
+
+  if (*s == '.') s++;
+
+  while (*s >= '0' && *s <= '9') {
+    n = n + (*s - '0') / d;
+    d *= 10.0;
+    s++;
+  }
+
+  return n;
+}
+
 void*
 memmove(void *vdst, const void *vsrc, int n)
 {

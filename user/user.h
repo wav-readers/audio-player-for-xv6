@@ -48,5 +48,6 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
+double atof(const char*);
 int memcmp(const void*, const void*, uint);
 void* memcpy(void*, const void*, uint);

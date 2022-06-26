@@ -6,7 +6,7 @@
 
 #define NDEBUG
 
-enum Command { ERROR, HELP, OPEN, VOLUME, PAUSE, PLAY, STOP, QUIT };
+enum Command { ERROR, HELP, OPEN, VOLUME, SPEED, PAUSE, PLAY, STOP, QUIT };
 
 #define MAXARGS 3
 #define MAX_CM_LEN 100
@@ -23,11 +23,13 @@ void showHelp() {
 
   printf("volume: 设置音量。\n");
   printf("  usage: volume <target value>\n");
+  printf("speed: 设置播放速度。默认速度为1.0\n");
+  printf("  usage: speed <target speed>\n");
 
   printf("pause: 暂停播放。\n");
   printf("  usage: pause\n");
-  printf("play: 继续播放。\n");
-  printf("  usage: play\n");
+  printf("resume: 继续播放。\n");
+  printf("  usage: resume\n");
   printf("stop: 停止播放。\n");
   printf("  usage: stop\n");
 
@@ -95,6 +97,8 @@ void parsecmd(char *s, struct cmd *cmd) {
     cmd->type = OPEN;
   } else if (strcmp(cm_name, "volume") == 0) {
     cmd->type = VOLUME;
+  } else if (strcmp(cm_name, "speed") == 0) {
+    cmd->type = SPEED;
   } else if (strcmp(cm_name, "pause") == 0) {
     cmd->type = PAUSE;
   } else if (strcmp(cm_name, "play") == 0) {
@@ -124,11 +128,11 @@ void runcmd(struct cmd *cmd) {
       if (apinfo->hasOpened) apCloseAudio(apinfo);
       if (apOpenAudio(cmd->argv[1], apinfo) >= 0) {
         apShowAudioInfo(apinfo);
-        //printf("finish showing audio info\n");
+        // printf("finish showing audio info\n");
         apReadDecode(apinfo);
-        //printf("finish read decode\n");
+        // printf("finish read decode\n");
         apSetPlay(1, apinfo);
-        //printf("finish setting play\n");
+        // printf("finish setting play\n");
       }
       break;
     case VOLUME:
@@ -138,6 +142,14 @@ void runcmd(struct cmd *cmd) {
       }
       apSetVolume(atoi(cmd->argv[1]), apinfo);
       printf("current volume: %s\n", cmd->argv[1]);
+      break;
+    case SPEED:
+      if (cmd->argc != 2) {
+        fprintf(2, "usage: %s <target value>\n", cmd->argv[0]);
+        return;
+      }
+      apSetSpeed(atof(cmd->argv[1]), apinfo);
+      printf("current speed: %s\n", cmd->argv[1]);
       break;
     case PAUSE:
       if (apinfo->hasOpened) apSetPlay(0, apinfo);
