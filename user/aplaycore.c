@@ -28,7 +28,7 @@ void updateSampleRate(struct ApAudioPlayInfo *apinfo) {
 }
 
 int apSetPlay(int play, struct ApAudioPlayInfo *apinfo) {
-  printf("apSetPlay, play = %d\n", play);
+  // printf("apSetPlay, play = %d\n", play);
   if (play == apinfo->isPlaying) {  // 无需修改，则直接返回，以减少开销
     return 0;
   }
@@ -67,7 +67,7 @@ int apSetSpeed(double speed, struct ApAudioPlayInfo *apinfo) {
 }
 
 int apOpenAudio(const char *file, struct ApAudioPlayInfo *apinfo) {
-  printf("apOpenAudio\n");
+  //printf("apOpenAudio\n");
 
   char *filext = strrchr(file, '.');
   if (strcmp(filext, ".wav") == 0) {
@@ -164,7 +164,7 @@ int apReadDecode(struct ApAudioPlayInfo *apinfo) {
 }
 
 int apCloseAudio(struct ApAudioPlayInfo *apinfo) {
-  printf("apCloseAudio\n");
+  //printf("apCloseAudio\n");
   //杀读译进程
   kill(apinfo->readDecPid);
 
