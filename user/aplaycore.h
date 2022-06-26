@@ -82,6 +82,6 @@ int apSetVolume(int volume, struct ApAudioPlayInfo *apinfo);
 void apSetMaxVolume(int maxVolume, struct ApAudioPlayInfo *apinfo);
 
 /// @return 0 if 成功 else -1
-int apSetSpeed(int speed, struct ApAudioPlayInfo *apinfo);
+int apSetSpeed(double speed, struct ApAudioPlayInfo *apinfo);
 
 #endif

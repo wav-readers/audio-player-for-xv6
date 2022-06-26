@@ -6,7 +6,7 @@
 
 #define NDEBUG
 
-enum Command { ERROR, HELP, OPEN, VOLUME, SPEED, PAUSE, PLAY, STOP, QUIT };
+enum Command { ERROR, HELP, OPEN, VOLUME, SPEED, PAUSE, RESUME, STOP, QUIT };
 
 #define MAXARGS 3
 #define MAX_CM_LEN 100
@@ -14,27 +14,25 @@ enum Command { ERROR, HELP, OPEN, VOLUME, SPEED, PAUSE, PLAY, STOP, QUIT };
 struct ApAudioPlayInfo *apinfo;
 
 void showHelp() {
-  printf(
-      "open: "
-      "打开音频文件并播放。\n"
-      "      "
-      "若当前已打开音频，程序将先关闭当前音频。\n");
-  printf("  usage: open <file path>\n");
+  printf("open: \n");
+  printf("    open <file path>       open the file and play.\n");
+  printf("                           File already open will be closed first.\n");
 
-  printf("volume: 设置音量。\n");
-  printf("  usage: volume <target value>\n");
-  printf("speed: 设置播放速度。默认速度为1.0\n");
-  printf("  usage: speed <target speed>\n");
+  printf("volume: \n");
+  printf("    volume                 print current volume\n");
+  printf("    volume <target volume>  set volume\n");
+  printf("speed: default speed is 1.0\n");
+  printf("    speed <target speed>   set play speed\n");
 
-  printf("pause: 暂停播放。\n");
-  printf("  usage: pause\n");
-  printf("resume: 继续播放。\n");
-  printf("  usage: resume\n");
-  printf("stop: 停止播放。\n");
-  printf("  usage: stop\n");
+  printf("pause:\n");
+  printf("    pause                  pause playing\n");
+  printf("resume:\n");
+  printf("    resume                 resume playing\n");
+  printf("stop: \n");
+  printf("    stop                   stop playing\n");
 
-  printf("quit: 退出播放器。\n");
-  printf("  usage: quit\n");
+  printf("quit:\n");
+  printf("    quit                   quit the Audio Player\n");
 }
 
 struct cmd {
@@ -101,8 +99,8 @@ void parsecmd(char *s, struct cmd *cmd) {
     cmd->type = SPEED;
   } else if (strcmp(cm_name, "pause") == 0) {
     cmd->type = PAUSE;
-  } else if (strcmp(cm_name, "play") == 0) {
-    cmd->type = PLAY;
+  } else if (strcmp(cm_name, "resume") == 0) {
+    cmd->type = RESUME;
   } else if (strcmp(cm_name, "stop") == 0) {
     cmd->type = STOP;
   } else if (strcmp(cm_name, "quit") == 0) {
@@ -117,49 +115,60 @@ void runcmd(struct cmd *cmd) {
     case ERROR:
       fprintf(2, "invalid command\n");
       return;
+
     case HELP:
       showHelp();
-      break;
+      return;
+
     case OPEN:
       if (cmd->argc != 2) {
-        fprintf(2, "usage: %s <file path>\n", cmd->argv[0]);
+        fprintf(2, "%s <file path>\n", cmd->argv[0]);
         return;
       }
       if (apinfo->hasOpened) apCloseAudio(apinfo);
       if (apOpenAudio(cmd->argv[1], apinfo) >= 0) {
         apShowAudioInfo(apinfo);
-        // printf("finish showing audio info\n");
         apReadDecode(apinfo);
-        // printf("finish read decode\n");
         apSetPlay(1, apinfo);
-        // printf("finish setting play\n");
       }
-      break;
+      return;
+
     case VOLUME:
-      if (cmd->argc != 2) {
-        fprintf(2, "usage: %s <target value>\n", cmd->argv[0]);
+      if (cmd->argc > 2) {
+        fprintf(2, "%s <target volume>\n", cmd->argv[0]);
         return;
       }
-      apSetVolume(atoi(cmd->argv[1]), apinfo);
-      printf("current volume: %s\n", cmd->argv[1]);
-      break;
+
+      if (cmd->argc == 1) {
+        printf("current volume: %d\n", apinfo->volume);
+        return;
+      }
+
+      if (apSetVolume(atoi(cmd->argv[1]), apinfo) >= 0) {
+        printf("current volume: %d\n", apinfo->volume);
+      }
+      return;
+
     case SPEED:
       if (cmd->argc != 2) {
-        fprintf(2, "usage: %s <target value>\n", cmd->argv[0]);
+        fprintf(2, "%s <target speed>\n", cmd->argv[0]);
         return;
       }
-      apSetSpeed(atof(cmd->argv[1]), apinfo);
-      printf("current speed: %s\n", cmd->argv[1]);
-      break;
+      
+      if (apSetSpeed(atof(cmd->argv[1]), apinfo) >=0) {
+        printf("current speed: %s\n", cmd->argv[1]);
+      }
+      return;
+      
     case PAUSE:
       if (apinfo->hasOpened) apSetPlay(0, apinfo);
-      break;
-    case PLAY:
+      return;
+    case RESUME:
       if (apinfo->hasOpened) apSetPlay(1, apinfo);
-      break;
+      return;
     case STOP:
       if (apinfo->hasOpened) apCloseAudio(apinfo);
-      break;
+      return;
     case QUIT:
       exit(0);
   }

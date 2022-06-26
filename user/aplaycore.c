@@ -19,11 +19,16 @@ void apSetMaxVolume(int maxVolume, struct ApAudioPlayInfo *apinfo) {
 }
 
 void updateSampleRate(struct ApAudioPlayInfo *apinfo) {
-  setSampleRate(apinfo->ainfo.sample_rate * apinfo->speed *
-                apinfo->ainfo.num_channels / 2);
+  setSampleRate((double)apinfo->ainfo.sample_rate * apinfo->speed *
+                (double)apinfo->ainfo.num_channels / 2.0);
+  if (apinfo->isPlaying) {
+    setPlay(0);
+    setPlay(1);
+  }
 }
 
 int apSetPlay(int play, struct ApAudioPlayInfo *apinfo) {
+  printf("apSetPlay, play = %d\n", play);
   if (play == apinfo->isPlaying) {  // 无需修改，则直接返回，以减少开销
     return 0;
   }
@@ -33,18 +38,30 @@ int apSetPlay(int play, struct ApAudioPlayInfo *apinfo) {
 }
 
 int apSetVolume(int volume, struct ApAudioPlayInfo *apinfo) {
+  if (!(volume >= 0 && volume <= apinfo->maxVolume)) {
+    fprintf(2, "invalid volume value\n");
+    return -1;
+  }
+
   setVolume(volume, apinfo->maxVolume);
-  apinfo->volume = volume;
+  int actualVolume = getVolume(apinfo->maxVolume);
+  apinfo->volume = actualVolume;
   return 0;
 }
 
-int apSetSpeed(int speed, struct ApAudioPlayInfo *apinfo) {
+int apSetSpeed(double speed, struct ApAudioPlayInfo *apinfo) {
+  if (!(speed > 0.0 && speed < 10.0)) {
+    fprintf(2, "invalid speed value\n");
+    return -1;
+  }
   apinfo->speed = speed;
   updateSampleRate(apinfo);
   return 0;
 }
 
 int apOpenAudio(const char *file, struct ApAudioPlayInfo *apinfo) {
+  printf("apOpenAudio\n");
+
   char *filext = strrchr(file, '.');
   if (strcmp(filext, ".wav") == 0) {
     apinfo->ftype = WAV;
@@ -81,6 +98,7 @@ int apOpenAudio(const char *file, struct ApAudioPlayInfo *apinfo) {
   // 填写其他信息：音频文件、播放状态、后台信息
   apinfo->fname = file;
   apinfo->isPlaying = 0;
+  apinfo->speed = 1.0;
   apinfo->volume = getVolume(apinfo->maxVolume);
   apinfo->fd = fd;
   apinfo->readDecPid = -1;
@@ -89,14 +107,7 @@ int apOpenAudio(const char *file, struct ApAudioPlayInfo *apinfo) {
 
 void apShowAudioInfo(struct ApAudioPlayInfo *apinfo) {
   printf("file name: %s\n", apinfo->fname);
-  switch (apinfo->ftype) {
-    case WAV:
-      printf("sample rate: %d\n", apinfo->ainfo.sample_rate);
-      break;
-    case MP3:
-      ///@todo
-      break;
-  }
+  printf("sample rate: %d\n", apinfo->ainfo.sample_rate);
   printf("volume: %d\n", apinfo->volume);
 }
 
@@ -134,7 +145,10 @@ int apReadDecode(struct ApAudioPlayInfo *apinfo) {
     char decodedData[DEC_BUFFER_SIZE];
     while (1) {
       int nRead = read(fd, fileData, READ_BUFFER_SIZE);
-      if (nRead == 0) exit(0);
+      if (nRead == 0) {
+        finishwriteaudio();
+        exit(0);
+      }
       int nDec = decode(fileData, decodedData);
       writeDecodedAudio(decodedData, nDec);
     }
@@ -143,9 +157,9 @@ int apReadDecode(struct ApAudioPlayInfo *apinfo) {
 }
 
 int apCloseAudio(struct ApAudioPlayInfo *apinfo) {
+  printf("apCloseAudio\n");
   //杀读译进程
   kill(apinfo->readDecPid);
-  wait(0);
 
   //清声卡缓冲区
   clearSoundCardBuffer();

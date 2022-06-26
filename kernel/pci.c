@@ -50,7 +50,6 @@ read_pci_config(uint16 bus, uint16 slot, uint16 func, uint16 offset)
 void
 set_sample_rate(uint32 rate)
 {
-  Write8(PCIE_PIO | (nabmba + 0x1b), 5); // clear control register
   Write16(PCIE_PIO | (namba + 0x2c), rate & 0xffff);
   Write16(PCIE_PIO | (namba + 0x2e), rate & 0xffff);
   Write16(PCIE_PIO | (namba + 0x30), rate & 0xffff);
