@@ -65,6 +65,7 @@ int apOpenAudio(const char *file, struct ApAudioPlayInfo *apinfo) {
       //未实现
       break;
   }
+  clearSoundCardBuffer();
 
   clearSoundCardBuffer();
   apinfo->hasOpened = 1;

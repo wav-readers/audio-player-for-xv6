@@ -84,17 +84,7 @@ uint64 sys_writeDecodedAudio(void)
   // copy data in virtual address to physical address
   struct proc *p = myproc();
   if (copyin(p->pagetable, buf, buf_addr, size) < 0)
-    return -1;
-
-  // check data
-  //printf("checking data in sys write\n");
-  /*for (int j = 0; j < 16; j++) {
-    int start = j * 64;
-    for (int i = 0; i < 16; ++i) {
-      printf("%d: %8\n", start+i, buf[start+i]);
-    }
-  }*/
-  
+    return -1;  
   
   if (used_size == 0) {
     //printf("this is a new buffer\n");
@@ -105,20 +95,13 @@ uint64 sys_writeDecodedAudio(void)
     // printf("data can all fit into buffer\n");
     // data can all put into current buffer.
     memmove(&sound_buffer[buffer_index].data[used_size], buf, size);
-    //printf("checking data after memmov\n");
-    /*for (int j = 0; j < 16; j++) {
-      int start = j * 64;
-      for (int i = 0; i < 16; ++i) {
-        printf("%d: %8\n", start+i, sound_buffer[buffer_index].data[start+i]);
-      }
-    }*/
     sound_buffer[buffer_index].flag = 1;
     used_size += size;
   } else {
     // printf("data cannot be put into buffer");
     // data cannot all put into current buffer.
     int remain = bufsize - used_size;
-    // then send this buffer to the audio card.
+    // then fill this buffer to the full, and send this buffer to the audio card.
     memmove(&sound_buffer[buffer_index].data[used_size], buf, remain);
     sound_buffer[buffer_index].flag = 3; // has been sent
     add_sound_node(&sound_buffer[buffer_index]);
@@ -157,13 +140,20 @@ uint64 sys_finishWriteAudio(void) {
     }
   }*/
   // send the buffer to audio card
-  if (used_size > 0) add_sound_node(&sound_buffer[buffer_index]);
+  if (used_size > 0) { 
+    sound_buffer[buffer_index].flag = 3; add_sound_node(&sound_buffer[buffer_index]); 
+  }
   return 0;
 }
 
 // void clearSoundCardBuffer();
 uint64 sys_clearSoundCardBuffer(void)
 {
+  buffer_index = 0; used_size = 0;
+  for (int i = 0; i < BUFFER_NODE_NUM; i++) {
+    memset(&sound_buffer[i], 0, sizeof(struct sound_node));
+    sound_buffer[i].flag = 0;
+  }
   clear_sound_queue();
   return 0;
 }

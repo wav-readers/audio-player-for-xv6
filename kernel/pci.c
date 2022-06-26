@@ -72,7 +72,17 @@ get_volume()
 void
 clear_sound_queue()
 {
+  printf("clearing sound queue\n");
   Write8(PCIE_PIO | (nabmba + 0x1b), 0); // clear control register
+  Write8(PCIE_PIO | (nabmba + 0x1b), 2);
+
+  uint wait = 1000;
+  while (wait--) {
+    if ((Read8(PCIE_PIO | (nabmba + 0x1b)) & 2) == 0) {
+      printf("success in clearing!\n");
+      break;
+    }
+  }
   sound_queue_head = 0;
 }
 
