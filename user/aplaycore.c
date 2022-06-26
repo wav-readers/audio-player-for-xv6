@@ -50,10 +50,17 @@ int apSetVolume(int volume, struct ApAudioPlayInfo *apinfo) {
 }
 
 int apSetSpeed(double speed, struct ApAudioPlayInfo *apinfo) {
-  if (!(speed > 0.0 && speed < 10.0)) {
+  if (speed <= 0.0) {
     fprintf(2, "invalid speed value\n");
     return -1;
   }
+  int actualSampleRate = (double)apinfo->ainfo.sample_rate * speed *
+                         (double)apinfo->ainfo.num_channels / 2.0;
+  if (actualSampleRate > 65535) {
+    fprintf(2, "too high speed value for this audio\n");
+    return -1;
+  }
+
   apinfo->speed = speed;
   updateSampleRate(apinfo);
   return 0;
