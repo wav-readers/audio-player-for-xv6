@@ -82,11 +82,10 @@ int apOpenAudio(const char *file, struct ApAudioPlayInfo *apinfo) {
   switch (apinfo->ftype) {
     case WAV: {
       if (readWavHead(fd, &apinfo->ainfo, &apinfo->wavInfo) < 0) {
-        fprintf(2, "invalid file format");
+        fprintf(2, "invalid file format\n");
         close(fd);
         return -1;
       }
-      updateSampleRate(apinfo);
       break;
     }
     case MP3:
@@ -102,6 +101,7 @@ int apOpenAudio(const char *file, struct ApAudioPlayInfo *apinfo) {
   apinfo->volume = getVolume(apinfo->maxVolume);
   apinfo->fd = fd;
   apinfo->readDecPid = -1;
+  updateSampleRate(apinfo);
   return fd;
 }
 
