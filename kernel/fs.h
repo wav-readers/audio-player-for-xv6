@@ -3,7 +3,7 @@
 
 
 #define ROOTINO  1   // root i-number
-#define BSIZE (2 << 18)  // block size
+#define BSIZE (2 << 15)  // block size
 
 // Disk layout:
 // [ boot block | super block | log | inode blocks |
