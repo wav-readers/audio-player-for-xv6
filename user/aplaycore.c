@@ -10,11 +10,17 @@ struct ApAudioPlayInfo *ApAudioPlayInfo() {
   apinfo->hasOpened = 0;
   apinfo->maxVolume = 100;
   apinfo->volume = getVolume(apinfo->maxVolume);
+  apinfo->speed = 1.0;
   return apinfo;
 }
 
 void apSetMaxVolume(int maxVolume, struct ApAudioPlayInfo *apinfo) {
   apinfo->maxVolume = maxVolume;
+}
+
+void updateSampleRate(struct ApAudioPlayInfo *apinfo) {
+  setSampleRate(apinfo->ainfo.sample_rate * apinfo->speed *
+                apinfo->ainfo.num_channels / 2);
 }
 
 int apSetPlay(int play, struct ApAudioPlayInfo *apinfo) {
@@ -27,10 +33,15 @@ int apSetPlay(int play, struct ApAudioPlayInfo *apinfo) {
 }
 
 int apSetVolume(int volume, struct ApAudioPlayInfo *apinfo) {
-  int oldVolume = apinfo->volume;
   setVolume(volume, apinfo->maxVolume);
   apinfo->volume = volume;
-  return oldVolume;
+  return 0;
+}
+
+int apSetSpeed(int speed, struct ApAudioPlayInfo *apinfo) {
+  apinfo->speed = speed;
+  updateSampleRate(apinfo);
+  return 0;
 }
 
 int apOpenAudio(const char *file, struct ApAudioPlayInfo *apinfo) {
@@ -53,20 +64,18 @@ int apOpenAudio(const char *file, struct ApAudioPlayInfo *apinfo) {
 
   switch (apinfo->ftype) {
     case WAV: {
-      if (readWavHead(fd, &apinfo->wavInfo) < 0) {
+      if (readWavHead(fd, &apinfo->ainfo, &apinfo->wavInfo) < 0) {
         fprintf(2, "invalid file format");
         close(fd);
         return -1;
       }
-      setSampleRate(apinfo->wavInfo.sample_rate);
+      updateSampleRate(apinfo);
       break;
     }
     case MP3:
       //未实现
       break;
   }
-  clearSoundCardBuffer();
-
   clearSoundCardBuffer();
   apinfo->hasOpened = 1;
   // 填写其他信息：音频文件、播放状态、后台信息
@@ -82,7 +91,7 @@ void apShowAudioInfo(struct ApAudioPlayInfo *apinfo) {
   printf("file name: %s\n", apinfo->fname);
   switch (apinfo->ftype) {
     case WAV:
-      printf("sample rate: %d\n", apinfo->wavInfo.sample_rate);
+      printf("sample rate: %d\n", apinfo->ainfo.sample_rate);
       break;
     case MP3:
       ///@todo
@@ -115,7 +124,7 @@ int apReadDecode(struct ApAudioPlayInfo *apinfo) {
     }
   }
   /* 处理其他音频格式
-    #define DEC_BUFFER_SIZE 2048 // 此buffer需比读文件的buffer更大
+    #define DEC_BUFFER_SIZE 2048 // 应根据比特率估算所需缓冲区大小
     void (*decode)(const char *fileData, char *decodedData) = 0;
     switch (apinfo->ftype) {
       case MP3:

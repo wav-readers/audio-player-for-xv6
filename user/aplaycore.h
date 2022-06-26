@@ -18,6 +18,7 @@ void decodeMp3(const char *fileData, char *decodedData);
 #ifndef USER_APLAYCORE_H
 #define USER_APLAYCORE_H
 
+#include "user/audio.h"
 #include "user/wav.h"
 
 #define READ_BUFFER_SIZE 2048
@@ -34,11 +35,13 @@ struct ApAudioPlayInfo {
   // 音频文件信息
   const char *fname;
   enum ApFileType ftype;
-  union {
+  struct AudioInfo ainfo; // 主要信息
+  union { // 细节信息
     struct WavInfo wavInfo;
   };
   // 播放状态
   int isPlaying;
+  double speed;
   // 后台信息
   int fd;
   int readDecPid;
@@ -73,9 +76,12 @@ int apCloseAudio(struct ApAudioPlayInfo *apinfo);
  */
 int apSetPlay(int play, struct ApAudioPlayInfo *apinfo);
 
-/// @return 原音量 if 成功 else -1
+/// @return 0 if 成功 else -1
 int apSetVolume(int volume, struct ApAudioPlayInfo *apinfo);
 
 void apSetMaxVolume(int maxVolume, struct ApAudioPlayInfo *apinfo);
+
+/// @return 0 if 成功 else -1
+int apSetSpeed(int speed, struct ApAudioPlayInfo *apinfo);
 
 #endif

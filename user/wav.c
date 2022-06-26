@@ -2,7 +2,7 @@
 
 #define HEAD_LENGTH 44
 
-int readWavHead(int fd, struct WavInfo *info) {
+int readWavHead(int fd, struct AudioInfo *ainfo, struct WavInfo *info) {
     char buf[HEAD_LENGTH];
     int n;
     if (fd < 0)
@@ -53,15 +53,15 @@ int readWavHead(int fd, struct WavInfo *info) {
         pos += 4;
         info->audio_fomat = *(short *)&buf[pos];
         pos += 2;
-        info->num_channels = *(short *)&buf[pos];
+        ainfo->num_channels = *(short *)&buf[pos];
         pos += 2;
-        info->sample_rate = *(int *)&buf[pos];
+        ainfo->sample_rate = *(int *)&buf[pos];
         pos += 4;
-        info->byte_rate = *(int *)&buf[pos];
+        ainfo->byte_rate = *(int *)&buf[pos];
         pos += 4;
         info->block_align = *(short *)&buf[pos];
         pos += 2;
-        info->bits_per_sample = *(short *)&buf[pos];
+        ainfo->bits_per_sample = *(short *)&buf[pos];
         pos += 2;
 
         //寻找“data”标记
@@ -87,7 +87,7 @@ int readWavHead(int fd, struct WavInfo *info) {
         info->start_pos = pos;
 
         //计算文件总帧数
-        info->num_frame = info->data_chunk_size / (info->num_channels * (info->bits_per_sample / 8));
+        ainfo->num_frame = info->data_chunk_size / (ainfo->num_channels * (ainfo->bits_per_sample / 8));
     }
     else
     {
